@@ -1,3 +1,4 @@
+# Forçando a atualização do ambiente em 15/07
 pandas
 streamlit
 folium
