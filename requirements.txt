@@ -2,4 +2,4 @@ pandas
 streamlit
 folium
 streamlit-folium
-geopy
+geopy>=2.0.0
