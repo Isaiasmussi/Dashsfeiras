@@ -1,6 +1,1 @@
-streamlit
-pandas
-plotly
-geopandas 
-folium
-streamlit-folium
+pip install streamlit pandas folium streamlit-folium geopy
