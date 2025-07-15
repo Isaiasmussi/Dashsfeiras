@@ -79,7 +79,7 @@ def geocode_dataframe(df):
 # --- Execução Principal do Dashboard ---
 
 # Defina o nome do seu arquivo CSV original aqui
-NOME_ARQUIVO_ORIGINAL = "Feiras Agro para impressão-2.xlsx - Tabela_de_Feiras_Agro_2025.csv"
+NOME_ARQUIVO_ORIGINAL = "dados_feiras.csv"
 
 try:
     # 1. Carrega e limpa os dados do arquivo original
