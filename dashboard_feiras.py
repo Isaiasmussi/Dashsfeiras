@@ -3,8 +3,8 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 from geopy.geocoders import Nominatim
-from geopy.extra_rate_limiter import RateLimiter
 import io
+import time
 
 # --- CONFIGURAÇÃO DA PÁGINA E ESTILOS ---
 st.set_page_config(
@@ -15,13 +15,12 @@ st.set_page_config(
 # Injetando CSS com um seletor mais robusto para o mapa
 st.markdown("""
     <style>
-        /* CORREÇÃO: Usa um seletor mais estável para encontrar o mapa */
-        /* Alvo: o iframe dentro do container principal da coluna do mapa */
+        /* Usa um seletor estável para encontrar o mapa */
         div[data-testid="stHorizontalBlock"] > div:first-child iframe {
             border-radius: 15px;
         }
         
-        /* Diminui a caixa de atribuição do Leaflet dentro do mapa */
+        /* Diminui a caixa de atribuição do Leaflet */
         .leaflet-control-attribution {
             font-size: 0.7rem !important;
             padding: 2px 4px !important;
@@ -41,7 +40,7 @@ if 'selected_event_index' not in st.session_state:
 @st.cache_data
 def carregar_e_limpar_dados():
     """
-    Carrega os dados diretamente do código, eliminando a necessidade de um arquivo externo.
+    Carrega os dados diretamente do código.
     """
     dados_string = """Mês,Evento,Foco,Data,Cidade,UF
 Janeiro,AgroShow Copagril 2026,Agronegócio,14 a 16,Marechal Cândido Rondon,PR
@@ -84,15 +83,16 @@ Novembro,Fenacana,Cana-de-açúcar,19 a 21,Sertãozinho,SP
 
 @st.cache_data
 def geocode_dataframe(df):
-    geolocator = Nominatim(user_agent="studio-data-dashboard-v11")
-    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+    geolocator = Nominatim(user_agent="studio-data-dashboard-v12")
     location_coords = {}
     with st.spinner("Geocodificando localizações... (executado apenas uma vez)"):
         for index, row in df.iterrows():
             try:
-                location_data = geocode(row['Localizacao'])
+                # Usando o geocode diretamente, sem o RateLimiter
+                location_data = geolocator.geocode(row['Localizacao'])
                 if location_data:
                     location_coords[row['Localizacao']] = (location_data.latitude, location_data.longitude)
+                time.sleep(1) # Pausa manual para não sobrecarregar o serviço
             except Exception:
                 pass
     df['Latitude'] = df['Localizacao'].map(lambda x: location_coords.get(x, (None, None))[0])
@@ -105,16 +105,12 @@ try:
     df_geocoded = geocode_dataframe(df_completo.copy())
     df_base = df_geocoded.dropna(subset=['Latitude', 'Longitude']).copy()
 
-    # --- LÓGICA DE INTERAÇÃO E FILTROS ---
     col1, col2 = st.columns([3, 2])
 
     with col2:
         st.subheader("Filtros e Controles")
-
-        # --- FILTROS ---
         selected_meses = st.multiselect("Filtrar por Mês:", options=sorted(df_base['Mes'].unique()))
         selected_ufs = st.multiselect("Filtrar por Estado (UF):", options=sorted(df_base['UF'].unique()))
-        
         cidades_disponiveis = sorted(df_base[df_base['UF'].isin(selected_ufs)]['Cidade'].unique()) if selected_ufs else sorted(df_base['Cidade'].unique())
         selected_cidades = st.multiselect("Filtrar por Cidade:", options=cidades_disponiveis)
 
@@ -126,29 +122,18 @@ try:
         if selected_cidades:
             df_filtrado = df_filtrado[df_filtrado['Cidade'].isin(selected_cidades)]
 
-        # --- SELEÇÃO DE DESTAQUE ---
         event_list = df_filtrado['Nome'].tolist()
         event_list.insert(0, "Limpar seleção e resetar mapa")
         
-        selected_event_name = st.selectbox(
-            "Selecione um evento para destacar no mapa:",
-            options=event_list,
-            index=0
-        )
+        selected_event_name = st.selectbox("Selecione um evento para destacar no mapa:", options=event_list, index=0)
 
         if selected_event_name != "Limpar seleção e resetar mapa":
             st.session_state.selected_event_index = df_filtrado[df_filtrado['Nome'] == selected_event_name].index[0]
         else:
             st.session_state.selected_event_index = None
         
-        # --- EXIBIÇÃO DA TABELA ---
         st.subheader("Dados dos Eventos")
-        st.dataframe(
-            df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']],
-            use_container_width=True,
-            hide_index=True,
-            height=350
-        )
+        st.dataframe(df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']], use_container_width=True, hide_index=True, height=350)
 
     with col1:
         st.subheader("Mapa Interativo dos Eventos")
@@ -165,7 +150,6 @@ try:
 
         for idx, row in df_filtrado.iterrows():
             is_selected = (st.session_state.selected_event_index == idx)
-            
             folium.CircleMarker(
                 location=[row['Latitude'], row['Longitude']],
                 radius=8,
