@@ -6,11 +6,30 @@ from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 import io
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
+# --- CONFIGURAÇÃO DA PÁGINA E ESTILOS ---
 st.set_page_config(
     layout="wide",
     page_title="Dashboard de Feiras Agro"
 )
+
+# Injetando CSS para arredondar as bordas do mapa e diminuir a caixa de atribuição
+st.markdown("""
+    <style>
+        /* Arredonda as bordas do container do mapa */
+        .st-emotion-cache-z5fcl4 {
+            border-radius: 15px;
+            overflow: hidden; /* Garante que o conteúdo do iframe respeite a borda */
+        }
+        
+        /* Diminui a caixa de atribuição do Leaflet dentro do mapa */
+        .leaflet-control-attribution {
+            font-size: 0.7rem !important; /* Diminui o tamanho da fonte */
+            padding: 2px 4px !important; /* Diminui o espaçamento interno */
+            background-color: rgba(255, 255, 255, 0.7) !important; /* Fundo semi-transparente */
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
 
 st.title("Dashboard de Feiras e Eventos Agro")
 
@@ -65,7 +84,7 @@ Novembro,Fenacana,Cana-de-açúcar,19 a 21,Sertãozinho,SP
 
 @st.cache_data
 def geocode_dataframe(df):
-    geolocator = Nominatim(user_agent="studio-data-dashboard-v9")
+    geolocator = Nominatim(user_agent="studio-data-dashboard-v10")
     geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
     location_coords = {}
     with st.spinner("Geocodificando localizações... (executado apenas uma vez)"):
@@ -96,11 +115,9 @@ try:
         selected_meses = st.multiselect("Filtrar por Mês:", options=sorted(df_base['Mes'].unique()))
         selected_ufs = st.multiselect("Filtrar por Estado (UF):", options=sorted(df_base['UF'].unique()))
         
-        # Filtra cidades com base nos estados selecionados
         cidades_disponiveis = sorted(df_base[df_base['UF'].isin(selected_ufs)]['Cidade'].unique()) if selected_ufs else sorted(df_base['Cidade'].unique())
         selected_cidades = st.multiselect("Filtrar por Cidade:", options=cidades_disponiveis)
 
-        # Aplica os filtros
         df_filtrado = df_base.copy()
         if selected_meses:
             df_filtrado = df_filtrado[df_filtrado['Mes'].isin(selected_meses)]
@@ -129,20 +146,19 @@ try:
         st.dataframe(
             df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']],
             use_container_width=True,
-            hide_index=True, # Oculta a coluna de índice
+            hide_index=True,
             height=350
         )
 
     with col1:
         st.subheader("Mapa Interativo dos Eventos")
         
-        # Define o centro e o zoom do mapa com base na seleção
         if st.session_state.selected_event_index is not None and st.session_state.selected_event_index in df_filtrado.index:
             selected_row = df_filtrado.loc[st.session_state.selected_event_index]
             map_center = [selected_row['Latitude'], selected_row['Longitude']]
             map_zoom = 12
         else:
-            map_center = [-14.2350, -51.9253] # Centro do Brasil
+            map_center = [-14.2350, -51.9253]
             map_zoom = 4
 
         m = folium.Map(location=map_center, zoom_start=map_zoom, tiles="CartoDB dark_matter")
