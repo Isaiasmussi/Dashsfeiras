@@ -65,7 +65,7 @@ Novembro,Fenacana,Cana-de-açúcar,19 a 21,Sertãozinho,SP
 
 @st.cache_data
 def geocode_dataframe(df):
-    geolocator = Nominatim(user_agent="studio-data-dashboard-v8")
+    geolocator = Nominatim(user_agent="studio-data-dashboard-v9")
     geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
     location_coords = {}
     with st.spinner("Geocodificando localizações... (executado apenas uma vez)"):
@@ -82,40 +82,63 @@ def geocode_dataframe(df):
 
 # --- EXECUÇÃO PRINCIPAL ---
 try:
-    df_limpo = carregar_e_limpar_dados()
-    df_geocoded = geocode_dataframe(df_limpo.copy())
-    df_mapa = df_geocoded.dropna(subset=['Latitude', 'Longitude']).copy()
+    df_completo = carregar_e_limpar_dados()
+    df_geocoded = geocode_dataframe(df_completo.copy())
+    df_base = df_geocoded.dropna(subset=['Latitude', 'Longitude']).copy()
 
-    # --- LÓGICA DE INTERAÇÃO ---
+    # --- LÓGICA DE INTERAÇÃO E FILTROS ---
     col1, col2 = st.columns([3, 2])
 
     with col2:
-        st.subheader("Controle e Dados")
+        st.subheader("Filtros e Controles")
+
+        # --- FILTROS ---
+        selected_meses = st.multiselect("Filtrar por Mês:", options=sorted(df_base['Mes'].unique()))
+        selected_ufs = st.multiselect("Filtrar por Estado (UF):", options=sorted(df_base['UF'].unique()))
         
-        # Cria uma lista de eventos para o selectbox, incluindo a opção de reset
-        event_list = df_mapa['Nome'].tolist()
+        # Filtra cidades com base nos estados selecionados
+        cidades_disponiveis = sorted(df_base[df_base['UF'].isin(selected_ufs)]['Cidade'].unique()) if selected_ufs else sorted(df_base['Cidade'].unique())
+        selected_cidades = st.multiselect("Filtrar por Cidade:", options=cidades_disponiveis)
+
+        # Aplica os filtros
+        df_filtrado = df_base.copy()
+        if selected_meses:
+            df_filtrado = df_filtrado[df_filtrado['Mes'].isin(selected_meses)]
+        if selected_ufs:
+            df_filtrado = df_filtrado[df_filtrado['UF'].isin(selected_ufs)]
+        if selected_cidades:
+            df_filtrado = df_filtrado[df_filtrado['Cidade'].isin(selected_cidades)]
+
+        # --- SELEÇÃO DE DESTAQUE ---
+        event_list = df_filtrado['Nome'].tolist()
         event_list.insert(0, "Limpar seleção e resetar mapa")
         
-        # O selectbox agora controla a seleção
         selected_event_name = st.selectbox(
-            "Selecione um evento para destacar:",
+            "Selecione um evento para destacar no mapa:",
             options=event_list,
-            index=0 # Padrão é a opção de limpar
+            index=0
         )
 
         if selected_event_name != "Limpar seleção e resetar mapa":
-            st.session_state.selected_event_index = df_mapa[df_mapa['Nome'] == selected_event_name].index[0]
+            st.session_state.selected_event_index = df_filtrado[df_filtrado['Nome'] == selected_event_name].index[0]
         else:
             st.session_state.selected_event_index = None
-
-        st.dataframe(df_mapa[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']], use_container_width=True, height=450)
+        
+        # --- EXIBIÇÃO DA TABELA ---
+        st.subheader("Dados dos Eventos")
+        st.dataframe(
+            df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']],
+            use_container_width=True,
+            hide_index=True, # Oculta a coluna de índice
+            height=350
+        )
 
     with col1:
         st.subheader("Mapa Interativo dos Eventos")
         
         # Define o centro e o zoom do mapa com base na seleção
-        if st.session_state.selected_event_index is not None:
-            selected_row = df_mapa.loc[st.session_state.selected_event_index]
+        if st.session_state.selected_event_index is not None and st.session_state.selected_event_index in df_filtrado.index:
+            selected_row = df_filtrado.loc[st.session_state.selected_event_index]
             map_center = [selected_row['Latitude'], selected_row['Longitude']]
             map_zoom = 12
         else:
@@ -124,14 +147,13 @@ try:
 
         m = folium.Map(location=map_center, zoom_start=map_zoom, tiles="CartoDB dark_matter")
 
-        for idx, row in df_mapa.iterrows():
+        for idx, row in df_filtrado.iterrows():
             is_selected = (st.session_state.selected_event_index == idx)
             
-            # Círculos verdes para padrão, círculo vermelho para selecionado
             folium.CircleMarker(
                 location=[row['Latitude'], row['Longitude']],
                 radius=8,
-                color="red" if is_selected else "#2ECC71", # Vermelho para selecionado, verde para padrão
+                color="red" if is_selected else "#2ECC71",
                 fill=True,
                 fill_color="red" if is_selected else "#2ECC71",
                 fill_opacity=0.7 if is_selected else 0.4,
