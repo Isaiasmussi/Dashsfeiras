@@ -12,19 +12,17 @@ st.set_page_config(
     page_title="Dashboard de Feiras Agro"
 )
 
-# Injetando CSS com um seletor mais robusto para o mapa
+# Injetando CSS com seletores corrigidos e mais específicos
 st.markdown("""
     <style>
-        /* Usa um seletor estável para encontrar o mapa */
-        div[data-testid="stHorizontalBlock"] > div:first-child iframe {
+        /* CORREÇÃO: Aplica o arredondamento diretamente no iframe do mapa */
+        iframe[title="streamlit_folium.st_folium"] {
             border-radius: 15px;
         }
         
-        /* Diminui a caixa de atribuição do Leaflet */
+        /* Oculta completamente a caixa de atribuição do Leaflet */
         .leaflet-control-attribution {
-            font-size: 0.7rem !important;
-            padding: 2px 4px !important;
-            background-color: rgba(255, 255, 255, 0.7) !important;
+            display: none !important;
         }
     </style>
     """, unsafe_allow_html=True)
