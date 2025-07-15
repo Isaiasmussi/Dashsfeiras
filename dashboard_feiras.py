@@ -7,36 +7,16 @@ from geopy.extra.rate_limiter import RateLimiter
 import io
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-# Aplicando o tema "Dark Forest"
 st.set_page_config(
     layout="wide",
-    page_title="Dashboard de Feiras Agro",
-    page_icon="🗺️"
+    page_title="Dashboard de Feiras Agro"
 )
 
-# Injetando CSS para o tema escuro (opcional, mas melhora a aparência)
-st.markdown("""
-    <style>
-        .main {
-            background-color: #1a1a1a;
-        }
-        .st-emotion-cache-16txtl3 {
-            color: #f0f2f6;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
-st.title("🌲 Dashboard de Feiras e Eventos Agro")
+st.title("Dashboard de Feiras e Eventos Agro")
 
 # --- INICIALIZAÇÃO DO ESTADO DA SESSÃO ---
-# Usado para "lembrar" qual evento foi clicado
-if 'selected_event' not in st.session_state:
-    st.session_state.selected_event = None
-if 'map_center' not in st.session_state:
-    st.session_state.map_center = [-14.2350, -51.9253] # Centro do Brasil
-if 'map_zoom' not in st.session_state:
-    st.session_state.map_zoom = 4
-
+if 'selected_event_index' not in st.session_state:
+    st.session_state.selected_event_index = None
 
 # --- FUNÇÕES DE PROCESSAMENTO ---
 @st.cache_data
@@ -81,11 +61,11 @@ Novembro,Fenacana,Cana-de-açúcar,19 a 21,Sertãozinho,SP
     df_cleaned['Mês'] = df_cleaned['Mês'].ffill()
     df_cleaned['Localizacao'] = df_cleaned['Cidade'] + ', ' + df_cleaned['UF']
     df_cleaned.rename(columns={'Mês': 'Mes', 'Evento': 'Nome', 'Foco': 'Segmento', 'Data': 'Datas'}, inplace=True)
-    return df_cleaned.reset_index() # Adiciona o index para seleção
+    return df_cleaned.reset_index()
 
 @st.cache_data
 def geocode_dataframe(df):
-    geolocator = Nominatim(user_agent="streamlit-app-studio-data-v7")
+    geolocator = Nominatim(user_agent="studio-data-dashboard-v8")
     geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
     location_coords = {}
     with st.spinner("Geocodificando localizações... (executado apenas uma vez)"):
@@ -104,45 +84,62 @@ def geocode_dataframe(df):
 try:
     df_limpo = carregar_e_limpar_dados()
     df_geocoded = geocode_dataframe(df_limpo.copy())
-    df_mapa = df_geocoded.dropna(subset=['Latitude', 'Longitude'])
+    df_mapa = df_geocoded.dropna(subset=['Latitude', 'Longitude']).copy()
 
+    # --- LÓGICA DE INTERAÇÃO ---
     col1, col2 = st.columns([3, 2])
+
+    with col2:
+        st.subheader("Controle e Dados")
+        
+        # Cria uma lista de eventos para o selectbox, incluindo a opção de reset
+        event_list = df_mapa['Nome'].tolist()
+        event_list.insert(0, "Limpar seleção e resetar mapa")
+        
+        # O selectbox agora controla a seleção
+        selected_event_name = st.selectbox(
+            "Selecione um evento para destacar:",
+            options=event_list,
+            index=0 # Padrão é a opção de limpar
+        )
+
+        if selected_event_name != "Limpar seleção e resetar mapa":
+            st.session_state.selected_event_index = df_mapa[df_mapa['Nome'] == selected_event_name].index[0]
+        else:
+            st.session_state.selected_event_index = None
+
+        st.dataframe(df_mapa[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']], use_container_width=True, height=450)
 
     with col1:
         st.subheader("Mapa Interativo dos Eventos")
-        # Usando tiles "CartoDB dark_matter" para o tema escuro
-        m = folium.Map(
-            location=st.session_state.map_center,
-            zoom_start=st.session_state.map_zoom,
-            tiles="CartoDB dark_matter"
-        )
+        
+        # Define o centro e o zoom do mapa com base na seleção
+        if st.session_state.selected_event_index is not None:
+            selected_row = df_mapa.loc[st.session_state.selected_event_index]
+            map_center = [selected_row['Latitude'], selected_row['Longitude']]
+            map_zoom = 12
+        else:
+            map_center = [-14.2350, -51.9253] # Centro do Brasil
+            map_zoom = 4
+
+        m = folium.Map(location=map_center, zoom_start=map_zoom, tiles="CartoDB dark_matter")
 
         for idx, row in df_mapa.iterrows():
-            is_selected = (st.session_state.selected_event == row['index'])
+            is_selected = (st.session_state.selected_event_index == idx)
             
-            # Ícone verde para padrão, vermelho para selecionado
-            icon_color = "red" if is_selected else "green"
-            
-            popup_text = f"<b>Evento:</b> {row['Nome']}<br><b>Data:</b> {row.get('Datas', 'N/A')}<br><b>Segmento:</b> {row['Segmento']}"
-            folium.Marker(
+            # Círculos verdes para padrão, círculo vermelho para selecionado
+            folium.CircleMarker(
                 location=[row['Latitude'], row['Longitude']],
-                popup=folium.Popup(popup_text, max_width=300),
-                tooltip=row['Nome'],
-                icon=folium.Icon(color=icon_color, icon="leaf", prefix="fa")
+                radius=8,
+                color="red" if is_selected else "#2ECC71", # Vermelho para selecionado, verde para padrão
+                fill=True,
+                fill_color="red" if is_selected else "#2ECC71",
+                fill_opacity=0.7 if is_selected else 0.4,
+                popup=f"<b>{row['Nome']}</b><br>{row['Cidade']}, {row['UF']}",
+                tooltip=row['Nome']
             ).add_to(m)
         
         st_folium(m, use_container_width=True, returned_objects=[])
-
-    with col2:
-        st.subheader("Lista de Eventos")
-        st.write("Clique em um evento para destacá-lo no mapa.")
-
-        for index, row in df_mapa.iterrows():
-            if st.button(f"{row['Nome']} - {row['Cidade']}, {row['UF']}", key=f"event_{row['index']}"):
-                st.session_state.selected_event = row['index']
-                st.session_state.map_center = [row['Latitude'], row['Longitude']]
-                st.session_state.map_zoom = 12 # Zoom mais próximo ao selecionar
-                st.rerun() # Força a atualização do app para refletir a seleção
 
 except Exception as e:
     st.error(f"Ocorreu um erro inesperado durante a execução: {e}")
