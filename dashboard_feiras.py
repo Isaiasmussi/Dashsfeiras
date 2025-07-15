@@ -3,7 +3,7 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 from geopy.geocoders import Nominatim
-from geopy.extra.rate_limiter import RateLimiter
+from geopy.extra_rate_limiter import RateLimiter
 import io
 
 # --- CONFIGURAÇÃO DA PÁGINA E ESTILOS ---
@@ -12,20 +12,20 @@ st.set_page_config(
     page_title="Dashboard de Feiras Agro"
 )
 
-# Injetando CSS para arredondar as bordas do mapa e diminuir a caixa de atribuição
+# Injetando CSS com um seletor mais robusto para o mapa
 st.markdown("""
     <style>
-        /* Arredonda as bordas do container do mapa */
-        .st-emotion-cache-z5fcl4 {
+        /* CORREÇÃO: Usa um seletor mais estável para encontrar o mapa */
+        /* Alvo: o iframe dentro do container principal da coluna do mapa */
+        div[data-testid="stHorizontalBlock"] > div:first-child iframe {
             border-radius: 15px;
-            overflow: hidden; /* Garante que o conteúdo do iframe respeite a borda */
         }
         
         /* Diminui a caixa de atribuição do Leaflet dentro do mapa */
         .leaflet-control-attribution {
-            font-size: 0.7rem !important; /* Diminui o tamanho da fonte */
-            padding: 2px 4px !important; /* Diminui o espaçamento interno */
-            background-color: rgba(255, 255, 255, 0.7) !important; /* Fundo semi-transparente */
+            font-size: 0.7rem !important;
+            padding: 2px 4px !important;
+            background-color: rgba(255, 255, 255, 0.7) !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -84,7 +84,7 @@ Novembro,Fenacana,Cana-de-açúcar,19 a 21,Sertãozinho,SP
 
 @st.cache_data
 def geocode_dataframe(df):
-    geolocator = Nominatim(user_agent="studio-data-dashboard-v10")
+    geolocator = Nominatim(user_agent="studio-data-dashboard-v11")
     geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
     location_coords = {}
     with st.spinner("Geocodificando localizações... (executado apenas uma vez)"):
