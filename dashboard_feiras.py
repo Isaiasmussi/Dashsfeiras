@@ -7,8 +7,36 @@ from geopy.extra.rate_limiter import RateLimiter
 import io
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(layout="wide", page_title="Dashboard de Feiras Agro", page_icon="🗺️")
-st.title("🗺️ Dashboard de Feiras e Eventos Agro")
+# Aplicando o tema "Dark Forest"
+st.set_page_config(
+    layout="wide",
+    page_title="Dashboard de Feiras Agro",
+    page_icon="🗺️"
+)
+
+# Injetando CSS para o tema escuro (opcional, mas melhora a aparência)
+st.markdown("""
+    <style>
+        .main {
+            background-color: #1a1a1a;
+        }
+        .st-emotion-cache-16txtl3 {
+            color: #f0f2f6;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+st.title("🌲 Dashboard de Feiras e Eventos Agro")
+
+# --- INICIALIZAÇÃO DO ESTADO DA SESSÃO ---
+# Usado para "lembrar" qual evento foi clicado
+if 'selected_event' not in st.session_state:
+    st.session_state.selected_event = None
+if 'map_center' not in st.session_state:
+    st.session_state.map_center = [-14.2350, -51.9253] # Centro do Brasil
+if 'map_zoom' not in st.session_state:
+    st.session_state.map_zoom = 4
+
 
 # --- FUNÇÕES DE PROCESSAMENTO ---
 @st.cache_data
@@ -16,7 +44,6 @@ def carregar_e_limpar_dados():
     """
     Carrega os dados diretamente do código, eliminando a necessidade de um arquivo externo.
     """
-    # CORREÇÃO: A string de dados foi ajustada para garantir a leitura correta pelo pandas.
     dados_string = """Mês,Evento,Foco,Data,Cidade,UF
 Janeiro,AgroShow Copagril 2026,Agronegócio,14 a 16,Marechal Cândido Rondon,PR
 Janeiro,COOLACER 2026,Tecnologia,28 e 29,Lacerdópolis,SC
@@ -49,85 +76,74 @@ Setembro,Agropec,Pecuária,10 a 13,Paragominas,PA
 Outubro,Frutal,Fruticultura,22 a 24,Fortaleza,CE
 Novembro,Fenacana,Cana-de-açúcar,19 a 21,Sertãozinho,SP
 """
-    
-    # Usamos io.StringIO para que o pandas leia a string como se fosse um arquivo
     df = pd.read_csv(io.StringIO(dados_string))
-
-    # Limpeza e formatação
     df_cleaned = df.dropna(subset=['Evento'])
     df_cleaned['Mês'] = df_cleaned['Mês'].ffill()
     df_cleaned['Localizacao'] = df_cleaned['Cidade'] + ', ' + df_cleaned['UF']
-    
-    # Renomeia colunas
-    df_cleaned.rename(columns={
-        'Mês': 'Mes', 
-        'Evento': 'Nome', 
-        'Foco': 'Segmento', 
-        'Data': 'Datas'
-    }, inplace=True)
-    
-    return df_cleaned.reset_index(drop=True)
+    df_cleaned.rename(columns={'Mês': 'Mes', 'Evento': 'Nome', 'Foco': 'Segmento', 'Data': 'Datas'}, inplace=True)
+    return df_cleaned.reset_index() # Adiciona o index para seleção
 
 @st.cache_data
 def geocode_dataframe(df):
-    """
-    Adiciona colunas de Latitude e Longitude ao DataFrame.
-    """
-    geolocator = Nominatim(user_agent="streamlit-app-studio-data-v6")
+    geolocator = Nominatim(user_agent="streamlit-app-studio-data-v7")
     geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
     location_coords = {}
-    
-    with st.spinner("A iniciar geocodificação... Isto só será executado na primeira vez e pode levar um minuto."):
-        progress_bar = st.progress(0)
-        unique_locations = df['Localizacao'].unique()
-        total_locations = len(unique_locations)
-        
-        for i, location in enumerate(unique_locations):
+    with st.spinner("Geocodificando localizações... (executado apenas uma vez)"):
+        for index, row in df.iterrows():
             try:
-                location_data = geocode(location)
-                location_coords[location] = (location_data.latitude, location_data.longitude) if location_data else (None, None)
+                location_data = geocode(row['Localizacao'])
+                if location_data:
+                    location_coords[row['Localizacao']] = (location_data.latitude, location_data.longitude)
             except Exception:
-                location_coords[location] = (None, None)
-            progress_bar.progress((i + 1) / total_locations)
-            
+                pass
     df['Latitude'] = df['Localizacao'].map(lambda x: location_coords.get(x, (None, None))[0])
     df['Longitude'] = df['Localizacao'].map(lambda x: location_coords.get(x, (None, None))[1])
     return df
 
-# --- EXECUÇÃO PRINCIPAL DO DASHBOARD ---
+# --- EXECUÇÃO PRINCIPAL ---
 try:
     df_limpo = carregar_e_limpar_dados()
-    
-    if df_limpo.empty:
-        st.error("O DataFrame está vazio. Verifique os dados no código.")
-    else:
-        df_geocoded = geocode_dataframe(df_limpo.copy())
-        df_mapa = df_geocoded.dropna(subset=['Latitude', 'Longitude'])
+    df_geocoded = geocode_dataframe(df_limpo.copy())
+    df_mapa = df_geocoded.dropna(subset=['Latitude', 'Longitude'])
 
-        # --- MONTAGEM DO LAYOUT ---
-        col1, col2 = st.columns([3, 2])
+    col1, col2 = st.columns([3, 2])
 
-        with col1:
-            st.subheader("Mapa Interativo dos Eventos")
-            map_center = [-14.2350, -51.9253]
-            m = folium.Map(location=map_center, zoom_start=4)
+    with col1:
+        st.subheader("Mapa Interativo dos Eventos")
+        # Usando tiles "CartoDB dark_matter" para o tema escuro
+        m = folium.Map(
+            location=st.session_state.map_center,
+            zoom_start=st.session_state.map_zoom,
+            tiles="CartoDB dark_matter"
+        )
 
-            for idx, row in df_mapa.iterrows():
-                popup_text = f"<b>Evento:</b> {row['Nome']}<br><b>Data:</b> {row.get('Datas', 'N/A')}<br><b>Segmento:</b> {row['Segmento']}"
-                folium.Marker(
-                    location=[row['Latitude'], row['Longitude']],
-                    popup=folium.Popup(popup_text, max_width=300),
-                    tooltip=row['Nome']
-                ).add_to(m)
+        for idx, row in df_mapa.iterrows():
+            is_selected = (st.session_state.selected_event == row['index'])
             
-            st_folium(m, use_container_width=True)
+            # Ícone verde para padrão, vermelho para selecionado
+            icon_color = "red" if is_selected else "green"
+            
+            popup_text = f"<b>Evento:</b> {row['Nome']}<br><b>Data:</b> {row.get('Datas', 'N/A')}<br><b>Segmento:</b> {row['Segmento']}"
+            folium.Marker(
+                location=[row['Latitude'], row['Longitude']],
+                popup=folium.Popup(popup_text, max_width=300),
+                tooltip=row['Nome'],
+                icon=folium.Icon(color=icon_color, icon="leaf", prefix="fa")
+            ).add_to(m)
+        
+        st_folium(m, use_container_width=True, returned_objects=[])
 
-        with col2:
-            st.subheader("Tabela de Dados")
-            df_display = df_geocoded[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']]
-            st.dataframe(df_display, use_container_width=True, height=500)
+    with col2:
+        st.subheader("Lista de Eventos")
+        st.write("Clique em um evento para destacá-lo no mapa.")
+
+        for index, row in df_mapa.iterrows():
+            if st.button(f"{row['Nome']} - {row['Cidade']}, {row['UF']}", key=f"event_{row['index']}"):
+                st.session_state.selected_event = row['index']
+                st.session_state.map_center = [row['Latitude'], row['Longitude']]
+                st.session_state.map_zoom = 12 # Zoom mais próximo ao selecionar
+                st.rerun() # Força a atualização do app para refletir a seleção
 
 except Exception as e:
     st.error(f"Ocorreu um erro inesperado durante a execução: {e}")
-    st.error("Se o erro persistir, pode haver um problema com a geocodificação ou com os dados inseridos no código.")
 
