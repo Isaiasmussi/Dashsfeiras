@@ -79,7 +79,7 @@ def geocode_dataframe(df):
 # --- Execução Principal do Dashboard ---
 
 # Defina o nome do seu arquivo CSV original aqui
-NOME_ARQUIVO_ORIGINAL = "dados_feiras.csv"
+NOME_ARQUIVO_ORIGINAL = "Feiras Agro para impressão-2.xlsx - Tabela_de_Feiras_Agro_2025.csv"
 
 try:
     # 1. Carrega e limpa os dados do arquivo original
@@ -117,3 +117,4 @@ except FileNotFoundError:
     st.error(f"Erro: O arquivo '{NOME_ARQUIVO_ORIGINAL}' não foi encontrado. Certifique-se de que ele está na mesma pasta que o script do dashboard.")
 except Exception as e:
     st.error(f"Ocorreu um erro inesperado: {e}")
+1s
