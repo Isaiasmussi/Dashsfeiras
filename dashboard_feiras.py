@@ -32,7 +32,8 @@ def carregar_e_limpar_dados(caminho_arquivo):
     """
     Carrega o arquivo CSV, faz a limpeza e prepara para o dashboard.
     """
-    df = pd.read_csv(caminho_arquivo)
+    # A ÚNICA ALTERAÇÃO É AQUI: adicionamos encoding='latin-1'
+    df = pd.read_csv(caminho_arquivo, encoding='latin-1')
     
     # Remove colunas desnecessárias (errors='ignore' evita erro se já não existirem)
     cols_to_drop = ['Vendedor', 'Cobert', 'Viagem']
