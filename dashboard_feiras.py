@@ -12,17 +12,14 @@ st.set_page_config(
     page_title="Dashboard de Feiras Agro"
 )
 
-# Injetando CSS com seletores corrigidos e mais específicos
+# Injetando CSS com um seletor mais robusto para as bordas do mapa
 st.markdown("""
     <style>
-        /* CORREÇÃO: Aplica o arredondamento diretamente no iframe do mapa */
-        iframe[title="streamlit_folium.st_folium"] {
+        /* CORREÇÃO DEFINITIVA: Alvo é o container do mapa pela sua estrutura */
+        /* Isto garante que o container que segura o mapa tenha as bordas arredondadas */
+        div[data-testid="stHorizontalBlock"] > div:first-child > div[data-testid="stVerticalBlock"] > div:nth-child(2) {
             border-radius: 15px;
-        }
-        
-        /* Oculta completamente a caixa de atribuição do Leaflet */
-        .leaflet-control-attribution {
-            display: none !important;
+            overflow: hidden; /* Essencial para que o conteúdo (mapa) respeite as bordas */
         }
     </style>
     """, unsafe_allow_html=True)
@@ -83,14 +80,13 @@ Novembro,Fenacana,Cana-de-açúcar,19 a 21,Sertãozinho,SP
 def geocode_dataframe(df):
     geolocator = Nominatim(user_agent="studio-data-dashboard-v12")
     location_coords = {}
-    with st.spinner("Geocodificando localizações... (executado apenas uma vez)"):
+    with st.spinner("A geocodificar localizações... (executado apenas uma vez)"):
         for index, row in df.iterrows():
             try:
-                # Usando o geocode diretamente, sem o RateLimiter
                 location_data = geolocator.geocode(row['Localizacao'])
                 if location_data:
                     location_coords[row['Localizacao']] = (location_data.latitude, location_data.longitude)
-                time.sleep(1) # Pausa manual para não sobrecarregar o serviço
+                time.sleep(1)
             except Exception:
                 pass
     df['Latitude'] = df['Localizacao'].map(lambda x: location_coords.get(x, (None, None))[0])
@@ -145,6 +141,9 @@ try:
             map_zoom = 4
 
         m = folium.Map(location=map_center, zoom_start=map_zoom, tiles="CartoDB dark_matter")
+        
+        # CORREÇÃO: Injeta CSS diretamente no mapa para ocultar a atribuição
+        m.get_root().html.add_child(folium.Element("<style>.leaflet-control-attribution {display: none !important;}</style>"))
 
         for idx, row in df_filtrado.iterrows():
             is_selected = (st.session_state.selected_event_index == idx)
