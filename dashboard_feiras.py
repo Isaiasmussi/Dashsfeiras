@@ -117,4 +117,3 @@ except FileNotFoundError:
     st.error(f"Erro: O arquivo '{NOME_ARQUIVO_ORIGINAL}' não foi encontrado. Certifique-se de que ele está na mesma pasta que o script do dashboard.")
 except Exception as e:
     st.error(f"Ocorreu um erro inesperado: {e}")
-1s
