@@ -31,7 +31,6 @@ st.markdown("""
 st.title("Dashboard de Feiras e Eventos Agro")
 
 # --- BASE DE DADOS DOS EXPOSITORES ---
-# Esta estrutura irá guardar as listas de expositores para cada evento.
 expositores_db = {
     "Congresso Andav 2025": [
         "ADAMA", "AGRO.ALL", "AGROCP", "AGROFIT", "AGROPLAN", "AGROPLANT", "AGROSYSTEM",
@@ -64,6 +63,7 @@ def carregar_e_limpar_dados():
     """
     Carrega os dados dos eventos diretamente do código.
     """
+    # CORREÇÃO: A base de dados foi limpa para remover linhas mal formatadas.
     dados_string = """Mês,Evento,Foco,Data,Cidade,UF
 Janeiro,AgroShow Copagril 2026,Agronegócio,14 a 16,Marechal Cândido Rondon,PR
 Janeiro,COOLACER 2026,Tecnologia,28 e 29,Lacerdópolis,SC
@@ -100,28 +100,29 @@ Julho,95ª Semana do Fazendeiro da UFV,Geral,12 a 18 de julho,Viçosa,MG
 Julho,Enflor Garden Fair 2025,Flores e Jardinagem,13 a 15 de julho,Holambra,SP
 Julho,Meeting Up Herb 2025,Plantas Daninhas,15 a 17 de julho,Passo Fundo,RS
 Julho,Superleite 2025,Pecuária Leiteira,15 a 18 de julho,Pompéu,MG
-Julho,IV Feira da Agricultura Familiar do Ceará 2025,Agricultura Familiar,17 a 19 de julho,Mucambo,CE
+Julho,IV Feira da Agricultura Familiar do Ceará 2025,"Agricultura Familiar, Agroecologia",17 a 19 de julho,Mucambo,CE
 Julho,EXPOBEL 2025,Pecuária e Agricultura,18 a 27 de julho,Bela Vista,MS
-Julho,CBSoja e Mercosoja 2025,Soja,21 a 24 de julho,Campinas,SP
-Julho,TECNOALTA 2025,Tecnologia Agrícola,23 a 26 de julho,Alta Floresta,MT
-Julho,Bom Jesus Agrotec Show 2025,Tecnologia Agrícola,23 a 26 de julho,Bom Jesus,PI
-Julho,BATATEC 2025,Batata-doce,24 a 27 de julho,Presidente Prudente,SP
+Julho,CBSoja e Mercosoja 2025,"Soja (Cadeia Produtiva)",21 a 24 de julho,Campinas,SP
+Julho,TECNOALTA 2025,"Tecnologia Agrícola, Máquinas",23 a 26 de julho,Alta Floresta,MT
+Julho,Bom Jesus Agrotec Show 2025,"Tecnologia Agrícola, Negócios",23 a 26 de julho,Bom Jesus,PI
+Julho,BATATEC 2025,"Batata-doce (Cadeia Produtiva)",24 a 27 de julho,Presidente Prudente,SP
 Julho,AGROCHAPADA 2025,Pecuária e Agricultura,25 a 27 de julho,Chapada Gaúcha,MG
-Julho,Congresso da Sober 2025,Economia Rural,27 a 31 de julho,Passo Fundo,RS
+Julho,Congresso da Sober 2025,"Economia, Administração e Sociologia Rural",27 a 31 de julho,Passo Fundo,RS
 Julho,Biocontrol & Biostimulants LATAM 2025,Biológicos,28 de julho,São Paulo,SP
-Julho,Bioeconomy Amazon Summit 2025,Bioeconomia,30 a 31 de julho,Manaus,AM
-Julho,Comdor 2025,Saúde Animal,31 de julho a 02 de agosto,Campinas,SP
-Agosto,18ª Feira de Sementes Crioulas,Agroecologia,01 a 03 de agosto,Juti,MS
-Agosto,Congresso Brasileiro de Fitopatologia 2025,Fitopatologia,03 a 08 de agosto,Lavras,MG
+Julho,Bioeconomy Amazon Summit 2025,"Bioeconomia, Inovação, Amazônia",30 a 31 de julho,Manaus,AM
+Julho,"Rota do Café: Sabores, Saberes e Serras do Ceará",Cafeicultura,30 de julho,Ceará,CE
+Julho,Comdor 2025,"Saúde Animal (Dor e Anestesiologia)",31 de julho a 02 de agosto,Campinas,SP
+Agosto,18ª Feira de Sementes Crioulas e Produtos Agroecológicos,"Sementes Crioulas, Agroecologia",01 a 03 de agosto,Juti,MS
+Agosto,Congresso Brasileiro de Fitopatologia 2025,"Fitopatologia, Sanidade Vegetal",03 a 08 de agosto,Lavras,MG
 Agosto,Congresso Brasileiro de Fruticultura 2025,Fruticultura,04 a 08 de agosto,Campinas,SP
 Agosto,EXPOSUL 2025,Pecuária e Agricultura,04 a 09 de agosto,Rondonópolis,MT
 Agosto,Congresso Andav 2025,Distribuição de Insumos,05 a 07 de agosto,São Paulo,SP
 Agosto,Agro Leite 2025,Pecuária Leiteira,05 a 08 de agosto,Castro,PR
-Agosto,The Brazil Conference & Expo (IFPA),FFLV,06 e 07 de agosto,São Paulo,SP
-Agosto,Congresso Brasileiro do Agronegócio 2025,Política e Economia,11 de agosto,São Paulo,SP
+Agosto,The Brazil Conference & Expo (IFPA),"Frutas, Flores, Legumes e Verduras (FFLV)",06 e 07 de agosto,São Paulo,SP
+Agosto,Congresso Brasileiro do Agronegócio 2025,Política e Economia do Agronegócio,11 de agosto,São Paulo,SP
 Agosto,Agro Ponte 2025,Agronegócio,13 a 17 de agosto,Criciúma,SC
 Agosto,Congresso de Aviação Agrícola 2025,Aviação Agrícola,19 a 21 de agosto,Santo Antônio do Leverger,MT
-Agosto,Expointer 2025,Pecuária e Máquinas,30 de agosto a 07 de setembro,Esteio,RS
+Agosto,Expointer 2025,"Pecuária, Máquinas, Agricultura Familiar",30 de agosto a 07 de setembro,Esteio,RS
 Agosto,56ª EXPOFAC,Feiras Agro,30 de agosto a 07 de setembro,Parauapebas,PA
 Setembro,Congresso Brasileiro de Melhoramento de Plantas 2025,Melhoramento de Plantas,02 a 05 de setembro,Luís Correia,PI
 Setembro,IFC Brasil 2025,Congressos Internacionais,02 a 04 de setembro,Foz do Iguaçu,PR
@@ -130,24 +131,24 @@ Setembro,SIM - Expominas BH,Indústria,09 a 12 de setembro,Belo Horizonte,MG
 Setembro,II Simpósio Soja Max,Soja,10 e 11 de setembro,Londrina,PR
 Setembro,Agrotech Expo 2025,Tecnologia,10 a 14 de setembro,São José dos Campos,SP
 Setembro,Congresso Paranaense de Zootecnia 2025,Zootecnia,10 a 13 de setembro,Paraná,PR
-Setembro,SICONBIOL 2025,Controle Biológico,14 a 18 de setembro,Gramado,RS
+Setembro,SICONBIOL 2025,"Controle Biológico, Bioinsumos",14 a 18 de setembro,Gramado,RS
 Setembro,Conferência Bienal WDA–LA 2025,Saúde Animal,15 de setembro,Minas Gerais,MG
 Setembro,Victam Latam 2025,Rações e Grãos,16 a 18 de setembro,São Paulo,SP
-Setembro,Fórum Pecuária Brasil 2025,Pecuária,17 de setembro,São Paulo,SP
+Setembro,Fórum Pecuária Brasil 2025,Pecuária (Estratégia e Mercado),17 de setembro,São Paulo,SP
 Setembro,III SIMPOHERBI 2025,Controle de Plantas Daninhas,24 a 26 de setembro,Jaboticabal,SP
-Setembro,WSAVA World Congress 2025,Medicina Veterinária,25 a 27 de setembro,Rio de Janeiro,RJ
+Setembro,WSAVA World Congress 2025,Medicina Veterinária (Pequenos Animais),25 a 27 de setembro,Rio de Janeiro,RJ
 Setembro,Encontro Abelheiro 2025,Apicultura,26 a 28 de setembro,Carazinho,RS
 Setembro,Semana Agronômica MS 2025,Agronomia,29 de setembro a 04 de outubro,Aquidauana,MS
 Outubro,Rio + Agro,Tecnologia,01 a 03 de outubro,Rio de Janeiro,RJ
 Outubro,ZOOTEC 2025,Zootecnia,07 a 10 de outubro,Salvador,BA
 Outubro,Congresso Brasileiro de Agronomia (CBA) 2025,Agronomia,14 a 17 de outubro,Maceió,AL
-Outubro,FENASAN 2025,Saneamento e Meio Ambiente,21 a 23 de outubro,São Paulo,SP
-Outubro,Congresso Nacional das Mulheres do Agronegócio (CNMA),Liderança Feminina,22 e 23 de outubro,São Paulo,SP
+Outubro,FENASAN 2025,Saneamento e Meio Ambiente⁴,21 a 23 de outubro,São Paulo,SP
+Outubro,Congresso Nacional das Mulheres do Agronegócio (CNMA),Liderança Feminina no Agro,22 e 23 de outubro,São Paulo,SP
 Outubro,II Fórum Abisolo + III Simpósio Biofertilizantes,Fertilizantes,22 e 23 de outubro,Campinas,SP
 Outubro,COMCIR 2025,Cirurgia Veterinária,30 de outubro a 01 de novembro,Foz do Iguaçu,PR
 Novembro,Conf. Int. Agric. Inteligente para o Clima,Agricultura e Clima,05 de novembro,Brasília,DF
 Novembro,COP30,Clima e Sustentabilidade,10 de novembro,Belém,PA
-Novembro,FENACAM 2025,Aquicultura,11 a 14 de novembro,Natal,RN
+Novembro,FENACAM 2025,Aquicultura e Carcinicultura,11 a 14 de novembro,Natal,RN
 Novembro,SIMLEITE,Pecuária Leiteira,13 a 15 de novembro,Minas Gerais,MG
 Novembro,FIMAN 2025,Agricultura,25 a 27 de novembro,Paranavaí,PR
 Novembro,AveSummit & AveExpo 2025,Avicultura,26 a 28 de novembro,Campinas,SP
