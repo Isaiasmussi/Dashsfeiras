@@ -268,27 +268,34 @@ try:
         st.subheader("Dados dos Eventos")
         st.dataframe(df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']], use_container_width=True, hide_index=True, height=250)
 
+        # --- LÓGICA DE EXIBIÇÃO DOS EXPOSITORES ---
         if selected_event_name and selected_event_name in expositores_db:
-            with st.expander(f"Expositores de {selected_event_name}", expanded=True):
-                expositores = pd.DataFrame(expositores_db[selected_event_name])
-                
-                # Desagrupa os segmentos para que uma empresa possa aparecer em várias categorias
-                expositores_exploded = expositores.explode('segmento')
-                segmentos = sorted(expositores_exploded['segmento'].unique())
-                
-                for segmento in segmentos:
-                    st.markdown(f"**{segmento}**")
-                    expositores_segmento = expositores_exploded[expositores_exploded['segmento'] == segmento]
+            # CORREÇÃO: Verifica se a lista de expositores não está vazia antes de processar
+            lista_de_expositores = expositores_db[selected_event_name]
+            if not lista_de_expositores:
+                with st.expander(f"Expositores de {selected_event_name}", expanded=True):
+                    st.info("A lista de expositores para este evento ainda não foi adicionada.")
+            else:
+                with st.expander(f"Expositores de {selected_event_name}", expanded=True):
+                    expositores = pd.DataFrame(lista_de_expositores)
                     
-                    for _, row in expositores_segmento.iterrows():
-                        if st.button(row['nome'], key=f"{selected_event_name}_{row['nome']}_{segmento}", use_container_width=True):
-                            show_expositor_modal(row.to_dict())
+                    # Desagrupa os segmentos para que uma empresa possa aparecer em várias categorias
+                    expositores_exploded = expositores.explode('segmento')
+                    segmentos = sorted(expositores_exploded['segmento'].unique())
+                    
+                    for segmento in segmentos:
+                        st.markdown(f"**{segmento}**")
+                        expositores_segmento = expositores_exploded[expositores_exploded['segmento'] == segmento]
+                        
+                        for _, row in expositores_segmento.iterrows():
+                            if st.button(row['nome'], key=f"{selected_event_name}_{row['nome']}_{segmento}", use_container_width=True):
+                                show_expositor_modal(row.to_dict())
 
     # --- LÓGICA DO MODAL ---
     if st.session_state.modal_expositor:
         expositor = st.session_state.modal_expositor
         st.markdown(f"""
-            <div class="modal">
+            <div class="modal" onclick="document.getElementById('close_modal_button').click()">
                 <div class="modal-content">
                     <h3>{expositor['nome']}</h3>
                     <p><b>Segmentos:</b> {', '.join(expositor['segmento'])}</p>
@@ -298,7 +305,7 @@ try:
             </div>
         """, unsafe_allow_html=True)
         # O botão para fechar o modal fica "invisível" mas funcional
-        if st.button("Fechar Descrição", key="close_modal", use_container_width=True):
+        if st.button("Fechar", key="close_modal_button", help="Clique para fechar"):
              st.session_state.modal_expositor = None
              st.rerun()
 
