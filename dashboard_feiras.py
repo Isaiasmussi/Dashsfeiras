@@ -12,14 +12,17 @@ st.set_page_config(
     page_title="Dashboard de Feiras Agro"
 )
 
-# Injetando CSS com um seletor mais robusto para as bordas do mapa
+# Injetando CSS para os ajustes visuais do mapa
 st.markdown("""
     <style>
         /* CORREÇÃO DEFINITIVA: Alvo é o container do mapa pela sua estrutura */
-        /* Isto garante que o container que segura o mapa tenha as bordas arredondadas */
         div[data-testid="stHorizontalBlock"] > div:first-child > div[data-testid="stVerticalBlock"] > div:nth-child(2) {
             border-radius: 15px;
             overflow: hidden; /* Essencial para que o conteúdo (mapa) respeite as bordas */
+        }
+        /* Oculta a caixa de atribuição do Leaflet */
+        .leaflet-control-attribution {
+            display: none !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -35,8 +38,9 @@ if 'selected_event_index' not in st.session_state:
 @st.cache_data
 def carregar_e_limpar_dados():
     """
-    Carrega os dados diretamente do código.
+    Carrega os dados diretamente do código. A base de dados foi expandida.
     """
+    # BASE DE DADOS ATUALIZADA com os novos eventos
     dados_string = """Mês,Evento,Foco,Data,Cidade,UF
 Janeiro,AgroShow Copagril 2026,Agronegócio,14 a 16,Marechal Cândido Rondon,PR
 Janeiro,COOLACER 2026,Tecnologia,28 e 29,Lacerdópolis,SC
@@ -63,22 +67,87 @@ Maio,Bahia Farm Show,Tecnologia,10 a 14,Luís Eduardo Magalhães,BA
 Maio,Expointer,Pecuária,24 a 01/09,Esteio,RS
 Junho,Hortitec,Horticultura,19 a 21,Holambra,SP
 Julho,Feacoop,Cooperativismo,29 a 01/08,Bebedouro,SP
-Agosto,Show de Inverno,Agronegócio,14 a 16,Ponta Grossa,PR
-Agosto,Agroshow,Agronegócio,21 a 24,Arapoti,PR
-Setembro,Agropec,Pecuária,10 a 13,Paragominas,PA
-Outubro,Frutal,Fruticultura,22 a 24,Fortaleza,CE
-Novembro,Fenacana,Cana-de-açúcar,19 a 21,Sertãozinho,SP
+Julho,Expomontes 2025,Feiras Agro,02 a 11 de julho,Montes Claros,MG
+Julho,Fenagen,Genética,02 a 06 de julho,Pelotas,RS
+Julho,Agripesi 2025,Agronegócio,03 a 06 de julho,São Gabriel do Oeste,MT
+Julho,Conferência Anual ABRAVEQ 2025,Veterinária,03 a 06 de julho,Rio Grande do Sul,RS
+Julho,EXPOVALE 2025,Feiras Agro,03 a 06 de julho,Mato Grosso,MT
+Julho,ACRICORTE 2025,Feiras Agro,10 e 11 de julho,Cuiabá,MT
+Julho,95ª Semana do Fazendeiro da UFV,Geral,12 a 18 de julho,Viçosa,MG
+Julho,Enflor Garden Fair 2025,Flores e Jardinagem,13 a 15 de julho,Holambra,SP
+Julho,Meeting Up Herb 2025,Plantas Daninhas,15 a 17 de julho,Passo Fundo,RS
+Julho,Superleite 2025,Pecuária Leiteira,15 a 18 de julho,Pompéu,MG
+Julho,IV Feira da Agricultura Familiar do Ceará 2025,Agricultura Familiar,17 a 19 de julho,Mucambo,CE
+Julho,EXPOBEL 2025,Pecuária e Agricultura,18 a 27 de julho,Bela Vista,MS
+Julho,CBSoja e Mercosoja 2025,Soja,21 a 24 de julho,Campinas,SP
+Julho,TECNOALTA 2025,Tecnologia Agrícola,23 a 26 de julho,Alta Floresta,MT
+Julho,Bom Jesus Agrotec Show 2025,Tecnologia Agrícola,23 a 26 de julho,Bom Jesus,PI
+Julho,BATATEC 2025,Batata-doce,24 a 27 de julho,Presidente Prudente,SP
+Julho,AGROCHAPADA 2025,Pecuária e Agricultura,25 a 27 de julho,Chapada Gaúcha,MG
+Julho,Congresso da Sober 2025,Economia Rural,27 a 31 de julho,Passo Fundo,RS
+Julho,Biocontrol & Biostimulants LATAM 2025,Biológicos,28 de julho,São Paulo,SP
+Julho,Bioeconomy Amazon Summit 2025,Bioeconomia,30 a 31 de julho,Manaus,AM
+Julho,Comdor 2025,Saúde Animal,31 de julho a 02 de agosto,Campinas,SP
+Agosto,18ª Feira de Sementes Crioulas,Agroecologia,01 a 03 de agosto,Juti,MS
+Agosto,Congresso Brasileiro de Fitopatologia 2025,Fitopatologia,03 a 08 de agosto,Lavras,MG
+Agosto,Congresso Brasileiro de Fruticultura 2025,Fruticultura,04 a 08 de agosto,Campinas,SP
+Agosto,EXPOSUL 2025,Pecuária e Agricultura,04 a 09 de agosto,Rondonópolis,MT
+Agosto,Congresso Andav 2025,Distribuição de Insumos,05 a 07 de agosto,São Paulo,SP
+Agosto,Agro Leite 2025,Pecuária Leiteira,05 a 08 de agosto,Castro,PR
+Agosto,The Brazil Conference & Expo (IFPA),FFLV,06 e 07 de agosto,São Paulo,SP
+Agosto,Congresso Brasileiro do Agronegócio 2025,Política e Economia,11 de agosto,São Paulo,SP
+Agosto,Agro Ponte 2025,Agronegócio,13 a 17 de agosto,Criciúma,SC
+Agosto,Congresso de Aviação Agrícola 2025,Aviação Agrícola,19 a 21 de agosto,Santo Antônio do Leverger,MT
+Agosto,Expointer 2025,Pecuária e Máquinas,30 de agosto a 07 de setembro,Esteio,RS
+Agosto,56ª EXPOFAC,Feiras Agro,30 de agosto a 07 de setembro,Parauapebas,PA
+Setembro,Congresso Brasileiro de Melhoramento de Plantas 2025,Melhoramento de Plantas,02 a 05 de setembro,Luís Correia,PI
+Setembro,IFC Brasil 2025,Congressos Internacionais,02 a 04 de setembro,Foz do Iguaçu,PR
+Setembro,15ª edição do Citros de Mesa,Fruticultura,04 e 05 de setembro,Cordeirópolis,SP
+Setembro,SIM - Expominas BH,Indústria,09 a 12 de setembro,Belo Horizonte,MG
+Setembro,II Simpósio Soja Max,Soja,10 e 11 de setembro,Londrina,PR
+Setembro,Agrotech Expo 2025,Tecnologia,10 a 14 de setembro,São José dos Campos,SP
+Setembro,Congresso Paranaense de Zootecnia 2025,Zootecnia,10 a 13 de setembro,Paraná,PR
+Setembro,SICONBIOL 2025,Controle Biológico,14 a 18 de setembro,Gramado,RS
+Setembro,Conferência Bienal WDA–LA 2025,Saúde Animal,15 de setembro,Minas Gerais,MG
+Setembro,Victam Latam 2025,Rações e Grãos,16 a 18 de setembro,São Paulo,SP
+Setembro,Fórum Pecuária Brasil 2025,Pecuária,17 de setembro,São Paulo,SP
+Setembro,III SIMPOHERBI 2025,Controle de Plantas Daninhas,24 a 26 de setembro,Jaboticabal,SP
+Setembro,WSAVA World Congress 2025,Medicina Veterinária,25 a 27 de setembro,Rio de Janeiro,RJ
+Setembro,Encontro Abelheiro 2025,Apicultura,26 a 28 de setembro,Carazinho,RS
+Setembro,Semana Agronômica MS 2025,Agronomia,29 de setembro a 04 de outubro,Aquidauana,MS
+Outubro,Rio + Agro,Tecnologia,01 a 03 de outubro,Rio de Janeiro,RJ
+Outubro,ZOOTEC 2025,Zootecnia,07 a 10 de outubro,Salvador,BA
+Outubro,Congresso Brasileiro de Agronomia (CBA) 2025,Agronomia,14 a 17 de outubro,Maceió,AL
+Outubro,FENASAN 2025,Saneamento e Meio Ambiente,21 a 23 de outubro,São Paulo,SP
+Outubro,Congresso Nacional das Mulheres do Agronegócio (CNMA),Liderança Feminina,22 e 23 de outubro,São Paulo,SP
+Outubro,II Fórum Abisolo + III Simpósio Biofertilizantes,Fertilizantes,22 e 23 de outubro,Campinas,SP
+Outubro,COMCIR 2025,Cirurgia Veterinária,30 de outubro a 01 de novembro,Foz do Iguaçu,PR
+Novembro,Conf. Int. Agric. Inteligente para o Clima,Agricultura e Clima,05 de novembro,Brasília,DF
+Novembro,COP30,Clima e Sustentabilidade,10 de novembro,Belém,PA
+Novembro,FENACAM 2025,Aquicultura,11 a 14 de novembro,Natal,RN
+Novembro,SIMLEITE,Pecuária Leiteira,13 a 15 de novembro,Minas Gerais,MG
+Novembro,FIMAN 2025,Agricultura,25 a 27 de novembro,Paranavaí,PR
+Novembro,AveSummit & AveExpo 2025,Avicultura,26 a 28 de novembro,Campinas,SP
+Novembro,Congresso Nordestino de Produção Animal (CNPA),Produção Animal,26 de novembro,Maceió,AL
+Novembro,FENAGRO 2025,Pecuária e Agricultura Familiar,28 de novembro a 07 de dezembro,Salvador,BA
+Dezembro,Prêmio Visão Agro Brasil 2025,Bioenergia,04 de dezembro,Ribeirão Preto,SP
+Dezembro,Planejamento estratégico Agrolink,Estratégia,29 e 30 de dezembro,Porto Alegre,RS
 """
     df = pd.read_csv(io.StringIO(dados_string))
-    df_cleaned = df.dropna(subset=['Evento'])
-    df_cleaned['Mês'] = df_cleaned['Mês'].ffill()
-    df_cleaned['Localizacao'] = df_cleaned['Cidade'] + ', ' + df_cleaned['UF']
-    df_cleaned.rename(columns={'Mês': 'Mes', 'Evento': 'Nome', 'Foco': 'Segmento', 'Data': 'Datas'}, inplace=True)
-    return df_cleaned.reset_index()
+    # Tratamento de dados para garantir a consistência
+    df['Cidade'] = df['Cidade'].str.strip()
+    df['UF'] = df['UF'].str.strip()
+    df.dropna(subset=['Evento', 'Cidade', 'UF'], inplace=True)
+    df = df[~df['Cidade'].str.contains('A definir|Online', na=False)]
+    
+    df['Mês'] = df['Mês'].ffill()
+    df['Localizacao'] = df['Cidade'] + ', ' + df['UF']
+    df.rename(columns={'Mês': 'Mes', 'Evento': 'Nome', 'Foco': 'Segmento', 'Data': 'Datas'}, inplace=True)
+    return df.reset_index()
 
 @st.cache_data
 def geocode_dataframe(df):
-    geolocator = Nominatim(user_agent="studio-data-dashboard-v12")
+    geolocator = Nominatim(user_agent="studio-data-dashboard-v13")
     location_coords = {}
     with st.spinner("A geocodificar localizações... (executado apenas uma vez)"):
         for index, row in df.iterrows():
@@ -142,7 +211,6 @@ try:
 
         m = folium.Map(location=map_center, zoom_start=map_zoom, tiles="CartoDB dark_matter")
         
-        # CORREÇÃO: Injeta CSS diretamente no mapa para ocultar a atribuição
         m.get_root().html.add_child(folium.Element("<style>.leaflet-control-attribution {display: none !important;}</style>"))
 
         for idx, row in df_filtrado.iterrows():
