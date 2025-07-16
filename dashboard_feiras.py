@@ -35,61 +35,59 @@ st.markdown("""
             font-size: 0.9rem;
             margin-top: 10px;
         }
+        /* Estilo para o modal de descrição */
+        .modal {
+            position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background-color: #262730; color: #FAFAFA; padding: 25px; border-radius: 10px;
+            width: 50%; max-width: 600px; border: 1px solid #444;
+        }
     </style>
     """, unsafe_allow_html=True)
 
 
 st.title("Dashboard de Feiras e Eventos Agro")
 
-# --- BASE DE DADOS DOS EXPOSITORES (COM SEGMENTAÇÃO) ---
+# --- BASE DE DADOS DOS EXPOSITORES (ESTRUTURA AVANÇADA) ---
 expositores_db = {
     "Congresso Andav 2025": [
-        {'nome': 'ADAMA', 'segmento': 'Agroquímicos'}, {'nome': 'ALBAUGH', 'segmento': 'Agroquímicos'},
-        {'nome': 'ARYSTA', 'segmento': 'Agroquímicos'}, {'nome': 'ASCENZA', 'segmento': 'Agroquímicos'},
-        {'nome': 'BASF', 'segmento': 'Agroquímicos'}, {'nome': 'BAYER', 'segmento': 'Agroquímicos'},
-        {'nome': 'BRA Agroquímica', 'segmento': 'Agroquímicos'}, {'nome': 'CORTEVA', 'segmento': 'Agroquímicos'},
-        {'nome': 'CROPFIELD', 'segmento': 'Agroquímicos'}, {'nome': 'DECAL', 'segmento': 'Agroquímicos'},
-        {'nome': 'DVA', 'segmento': 'Agroquímicos'}, {'nome': 'FMC', 'segmento': 'Agroquímicos'},
-        {'nome': 'GOWAN', 'segmento': 'Agroquímicos'}, {'nome': 'HELM', 'segmento': 'Agroquímicos'},
-        {'nome': 'IHARABRAS', 'segmento': 'Agroquímicos'}, {'nome': 'IHARA', 'segmento': 'Agroquímicos'},
-        {'nome': 'NORTOX', 'segmento': 'Agroquímicos'}, {'nome': 'OUROFINO', 'segmento': 'Agroquímicos'},
-        {'nome': 'ROTAM', 'segmento': 'Agroquímicos'}, {'nome': 'SANDEZ', 'segmento': 'Agroquímicos'},
-        {'nome': 'SANDEZ AGRO', 'segmento': 'Agroquímicos'}, {'nome': 'SIPCAM NICHINO', 'segmento': 'Agroquímicos'},
-        {'nome': 'SUMITOMO CHEMICAL', 'segmento': 'Agroquímicos'}, {'nome': 'SYNGENTA', 'segmento': 'Agroquímicos'},
-        {'nome': 'TECNOMYL', 'segmento': 'Agroquímicos'}, {'nome': 'UPL', 'segmento': 'Agroquímicos'},
-        {'nome': 'COMPASS MINERALS', 'segmento': 'Adubos/Fertilizantes'}, {'nome': 'EUROCHEM', 'segmento': 'Adubos/Fertilizantes'},
-        {'nome': 'GRUPO FERTIPAR', 'segmento': 'Adubos/Fertilizantes'}, {'nome': 'MICROQUIMICA', 'segmento': 'Adubos/Fertilizantes'},
-        {'nome': 'NUTRIPLAN', 'segmento': 'Adubos/Fertilizantes'}, {'nome': 'PIRECAL', 'segmento': 'Adubos/Fertilizantes'},
-        {'nome': 'VERDE', 'segmento': 'Adubos/Fertilizantes'}, {'nome': 'YARA', 'segmento': 'Adubos/Fertilizantes'},
-        {'nome': 'BIOTROP', 'segmento': 'Biológicos'}, {'nome': 'KOPPERT', 'segmento': 'Biológicos'},
-        {'nome': 'LABORATÓRIO FARROUPILHA', 'segmento': 'Biológicos'}, {'nome': 'PLANT DEFENDER', 'segmento': 'Biológicos'},
-        {'nome': 'VITTIA', 'segmento': 'Biológicos'},
-        {'nome': 'ARAG', 'segmento': 'Máquinas/Equipamentos'}, {'nome': 'JACTO', 'segmento': 'Máquinas/Equipamentos'},
-        {'nome': 'PIONEER', 'segmento': 'Sementes'},
-        {'nome': 'AGRO.ALL', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'AGROCP', 'segmento': 'Serviços/Tecnologia'},
-        {'nome': 'AGROFIT', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'AGROPLAN', 'segmento': 'Serviços/Tecnologia'},
-        {'nome': 'AGROPLANT', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'AGROSYSTEM', 'segmento': 'Serviços/Tecnologia'},
-        {'nome': 'ATAR', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'AUDACES', 'segmento': 'Serviços/Tecnologia'},
-        {'nome': 'EXACTA', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'GAFOR', 'segmento': 'Serviços/Tecnologia'},
-        {'nome': 'GIRO AGRO', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'GRUPO ATUAL', 'segmento': 'Serviços/Tecnologia'},
-        {'nome': 'IMETAME', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'INNOVA', 'segmento': 'Serviços/Tecnologia'},
-        {'nome': 'NORTENE', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'PERFINOR', 'segmento': 'Serviços/Tecnologia'},
-        {'nome': 'PRODETER', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'SPEED AGRO', 'segmento': 'Serviços/Tecnologia'},
-        {'nome': 'TAGRO', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'TERRA DE CULTIVO', 'segmento': 'Serviços/Tecnologia'},
-        {'nome': 'AMIPAR', 'segmento': 'Distribuição'}, {'nome': 'BEVAP', 'segmento': 'Distribuição'},
-        {'nome': 'BOM FUTURO', 'segmento': 'Distribuição'}, {'nome': 'BRENNTAG', 'segmento': 'Distribuição'},
-        {'nome': 'BUNGE', 'segmento': 'Distribuição'}, {'nome': 'CURA CAMPO', 'segmento': 'Distribuição'},
-        {'nome': 'DINAMICA', 'segmento': 'Distribuição'}, {'nome': 'DISAM', 'segmento': 'Distribuição'},
-        {'nome': 'FOLTRON', 'segmento': 'Distribuição'}, {'nome': 'GALEN', 'segmento': 'Distribuição'},
-        {'nome': 'GRAO DE OURO', 'segmento': 'Distribuição'}, {'nome': 'LONZA', 'segmento': 'Distribuição'},
-        {'nome': 'LOUIS DREYFUS', 'segmento': 'Distribuição'}, {'nome': 'MILLENNIUM', 'segmento': 'Distribuição'},
-        {'nome': 'OXIQUIMICA', 'segmento': 'Distribuição'}, {'nome': 'PETROBRAS', 'segmento': 'Distribuição'},
-        {'nome': 'PLANALTO', 'segmento': 'Distribuição'}, {'nome': 'SANTA CLARA', 'segmento': 'Distribuição'},
-        {'nome': 'STOCKOSORB', 'segmento': 'Distribuição'}, {'nome': 'TRADE CORP', 'segmento': 'Distribuição'},
-        {'nome': 'VIAMÃ', 'segmento': 'Distribuição'}, {'nome': 'VIGNIS', 'segmento': 'Distribuição'}
+        {'nome': 'ADAMA', 'segmento': ['Agroquímicos'], 'descricao': 'Líder global em proteção de cultivos, fornecendo soluções para agricultores em todo o mundo.'},
+        {'nome': 'BASF', 'segmento': ['Agroquímicos', 'Sementes'], 'descricao': 'Empresa química líder mundial, com um vasto portfólio para agricultura, incluindo sementes e defensivos.'},
+        {'nome': 'BAYER', 'segmento': ['Agroquímicos', 'Biológicos'], 'descricao': 'Gigante farmacêutica e agrícola, focada em saúde e nutrição, com forte presença em proteção de cultivos.'},
+        {'nome': 'CORTEVA', 'segmento': ['Agroquímicos', 'Sementes'], 'descricao': 'Empresa puramente agrícola, com forte herança da Dow e DuPont, focada em sementes e proteção de cultivos.'},
+        {'nome': 'FMC', 'segmento': ['Agroquímicos'], 'descricao': 'Empresa de ciências agrícolas que avança a agricultura com soluções inovadoras e sustentáveis.'},
+        {'nome': 'SYNGENTA', 'segmento': ['Agroquímicos', 'Sementes'], 'descricao': 'Líder em agricultura, ajudando a melhorar a segurança alimentar global, permitindo que milhões de agricultores façam melhor uso dos recursos disponíveis.'},
+        {'nome': 'YARA', 'segmento': ['Adubos/Fertilizantes'], 'descricao': 'Líder mundial em nutrição de plantas, oferecendo soluções para agricultura sustentável e meio ambiente.'},
+        {'nome': 'JACTO', 'segmento': ['Máquinas/Equipamentos'], 'descricao': 'Empresa brasileira, líder em pulverizadores e equipamentos agrícolas, com presença em mais de 100 países.'}
     ],
-    "Victam Latam 2025": []
+    "Victam Latam 2025": [
+        {'nome': '4B', 'segmento': ['Equipamentos'], 'descricao': 'Líder em componentes para elevadores de canecas e transportadores, e monitoramento de risco de explosão.'},
+        {'nome': 'Andritz', 'segmento': ['Equipamentos', 'Tecnologia'], 'descricao': 'Grupo tecnológico internacional que fornece plantas, sistemas e serviços para várias indústrias, incluindo nutrição animal.'},
+        {'nome': 'Awila', 'segmento': ['Equipamentos'], 'descricao': 'Especialista em plantas de ração mista, manuseio de grãos e moagem industrial.'},
+        {'nome': 'Buhler', 'segmento': ['Equipamentos', 'Tecnologia'], 'descricao': 'Líder em tecnologia para processamento de alimentos e mobilidade, com soluções para toda a cadeia de valor.'},
+        {'nome': 'CPM', 'segmento': ['Equipamentos'], 'descricao': 'Fornecedor líder de equipamentos de processo para as indústrias de nutrição animal, oleaginosas e biocombustíveis.'},
+        {'nome': 'Dinnissen', 'segmento': ['Equipamentos'], 'descricao': 'Especialista em desenvolvimento de máquinas, instalações completas e processos para a indústria de alimentos e rações.'},
+        {'nome': 'Emate', 'segmento': ['Equipamentos'], 'descricao': 'Fornecedor de soluções completas para a indústria de rações, incluindo moinhos de martelos e misturadores.'},
+        {'nome': 'Famsun', 'segmento': ['Equipamentos', 'Tecnologia'], 'descricao': 'Provedor de soluções integradas para a indústria agroalimentar, com foco em ração, armazenamento e processamento.'},
+        {'nome': 'Ferraz', 'segmento': ['Máquinas/Equipamentos'], 'descricao': 'Fabricante brasileiro de máquinas e equipamentos para nutrição animal.'},
+        {'nome': 'Forberg', 'segmento': ['Equipamentos'], 'descricao': 'Inventor do misturador de pás duplas, fornecendo tecnologia de mistura para diversas indústrias.'},
+        {'nome': 'Frigm', 'segmento': ['Equipamentos'], 'descricao': 'Descrição não disponível.'},
+        {'nome': 'Goudsmit', 'segmento': ['Equipamentos'], 'descricao': 'Especialista em sistemas magnéticos para separação, transporte e reciclagem de metais.'},
+        {'nome': 'Kahl', 'segmento': ['Equipamentos'], 'descricao': 'Fabricante de prensas peletizadoras e outras máquinas para a indústria de rações e alimentos.'},
+        {'nome': 'Mabra', 'segmento': ['Equipamentos'], 'descricao': 'Empresa especializada em equipamentos para a indústria de nutrição animal.'},
+        {'nome': 'PLP', 'segmento': ['Equipamentos'], 'descricao': 'Fornecedor de sistemas de aplicação de líquidos e pós para a indústria de rações.'},
+        {'nome': 'Polypack', 'segmento': ['Embalagens'], 'descricao': 'Líder em soluções de embalagens, incluindo sacos e filmes para a indústria agro.'},
+        {'nome': 'Rosal', 'segmento': ['Equipamentos'], 'descricao': 'Fabricante de moinhos de martelos e soluções para moagem e processamento.'},
+        {'nome': 'Silos', 'segmento': ['Armazenagem'], 'descricao': 'Descrição não disponível.'},
+        {'nome': 'TSE', 'segmento': ['Equipamentos'], 'descricao': 'Descrição não disponível.'},
+        {'nome': 'Van Aarsen', 'segmento': ['Equipamentos', 'Tecnologia'], 'descricao': 'Desenvolve e fabrica máquinas e soluções completas para a indústria de ração animal.'},
+        {'nome': 'Wemenger', 'segmento': ['Equipamentos'], 'descricao': 'Descrição não disponível.'},
+        {'nome': 'Zheng', 'segmento': ['Equipamentos'], 'descricao': 'Descrição não disponível.'}
+    ]
 }
+
 
 # --- INICIALIZAÇÃO DO ESTADO DA SESSÃO ---
 if 'selected_event_index' not in st.session_state:
@@ -98,6 +96,9 @@ if 'meses_selecionados' not in st.session_state:
     st.session_state.meses_selecionados = []
 if 'ufs_selecionados' not in st.session_state:
     st.session_state.ufs_selecionados = []
+if 'modal_expositor' not in st.session_state:
+    st.session_state.modal_expositor = None
+
 
 # --- FUNÇÕES DE PROCESSAMENTO ---
 @st.cache_data
@@ -222,11 +223,13 @@ def geocode_dataframe(df):
     df['Longitude'] = df['Localizacao'].map(lambda x: location_coords.get(x, (None, None))[1])
     return df
 
-# --- CALLBACK PARA LIMPAR FILTROS ---
+# --- CALLBACKS ---
 def limpar_filtros():
     st.session_state.meses_selecionados = []
     st.session_state.ufs_selecionados = []
-    # Não precisa mais de um rerun explícito aqui, o Streamlit gerencia isso.
+
+def show_expositor_modal(expositor):
+    st.session_state.modal_expositor = expositor
 
 # --- EXECUÇÃO PRINCIPAL ---
 try:
@@ -238,26 +241,20 @@ try:
 
     with col2:
         st.subheader("Filtros e Controles")
-        
-        # O botão agora usa a função de callback e está posicionado no topo
         st.button("Limpar Filtros", on_click=limpar_filtros)
 
-        # --- FILTROS ---
         meses_ordem = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
         meses_disponiveis = sorted(df_base['Mes'].unique(), key=lambda x: meses_ordem.index(x))
         
-        # Os widgets agora usam chaves únicas para evitar conflitos de estado
         meses_selecionados = st.multiselect("Filtrar por Mês:", options=meses_disponiveis, key='meses_selecionados')
         ufs_selecionados = st.multiselect("Filtrar por Estado (UF):", options=sorted(df_base['UF'].unique()), key='ufs_selecionados')
         
-        # Aplica os filtros
         df_filtrado = df_base.copy()
         if meses_selecionados:
             df_filtrado = df_filtrado[df_filtrado['Mes'].isin(meses_selecionados)]
         if ufs_selecionados:
             df_filtrado = df_filtrado[df_filtrado['UF'].isin(ufs_selecionados)]
 
-        # --- SELEÇÃO DE DESTAQUE ---
         event_list = df_filtrado['Nome'].tolist()
         event_list.insert(0, "Limpar seleção e resetar mapa")
         
@@ -268,23 +265,43 @@ try:
         else:
             st.session_state.selected_event_index = None
         
-        # --- EXIBIÇÃO DA TABELA E EXPOSITORES ---
         st.subheader("Dados dos Eventos")
         st.dataframe(df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']], use_container_width=True, hide_index=True, height=250)
 
         if selected_event_name and selected_event_name in expositores_db:
             with st.expander(f"Expositores de {selected_event_name}", expanded=True):
                 expositores = pd.DataFrame(expositores_db[selected_event_name])
-                segmentos = sorted(expositores['segmento'].unique())
+                
+                # Desagrupa os segmentos para que uma empresa possa aparecer em várias categorias
+                expositores_exploded = expositores.explode('segmento')
+                segmentos = sorted(expositores_exploded['segmento'].unique())
                 
                 for segmento in segmentos:
                     st.markdown(f"**{segmento}**")
-                    expositores_segmento = expositores[expositores['segmento'] == segmento]['nome']
+                    expositores_segmento = expositores_exploded[expositores_exploded['segmento'] == segmento]
                     
-                    num_cols = 2
-                    cols = st.columns(num_cols)
-                    for i, nome in enumerate(sorted(expositores_segmento)):
-                        cols[i % num_cols].markdown(f"- {nome}")
+                    for _, row in expositores_segmento.iterrows():
+                        if st.button(row['nome'], key=f"{selected_event_name}_{row['nome']}_{segmento}", use_container_width=True):
+                            show_expositor_modal(row.to_dict())
+
+    # --- LÓGICA DO MODAL ---
+    if st.session_state.modal_expositor:
+        expositor = st.session_state.modal_expositor
+        st.markdown(f"""
+            <div class="modal">
+                <div class="modal-content">
+                    <h3>{expositor['nome']}</h3>
+                    <p><b>Segmentos:</b> {', '.join(expositor['segmento'])}</p>
+                    <hr>
+                    <p>{expositor['descricao']}</p>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        # O botão para fechar o modal fica "invisível" mas funcional
+        if st.button("Fechar Descrição", key="close_modal", use_container_width=True):
+             st.session_state.modal_expositor = None
+             st.rerun()
+
 
     with col1:
         st.subheader("Mapa Interativo dos Eventos")
