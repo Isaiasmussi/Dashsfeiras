@@ -12,9 +12,13 @@ st.set_page_config(
     page_title="Dashboard de Feiras Agro"
 )
 
-# Injetando CSS para os ajustes visuais do mapa
+# Injetando CSS com um seletor mais robusto para garantir a consistência do tema
 st.markdown("""
     <style>
+        /* Garante o fundo escuro consistente */
+        .main > div {
+            background-color: #0E1117;
+        }
         /* Arredonda as bordas do container do mapa */
         div[data-testid="stHorizontalBlock"] > div:first-child > div[data-testid="stVerticalBlock"] > div:nth-child(2) {
             border-radius: 15px;
@@ -30,28 +34,55 @@ st.markdown("""
 
 st.title("Dashboard de Feiras e Eventos Agro")
 
-# --- BASE DE DADOS DOS EXPOSITORES ---
+# --- BASE DE DADOS DOS EXPOSITORES (COM SEGMENTAÇÃO) ---
 expositores_db = {
     "Congresso Andav 2025": [
-        "ADAMA", "AGRO.ALL", "AGROCP", "AGROFIT", "AGROPLAN", "AGROPLANT", "AGROSYSTEM",
-        "AGROVANT", "ALBAUGH", "AMIPAR", "ARAG", "ARYSTA", "ASCENZA", "ATAR", "AUDACES",
-        "BASF", "BAYER", "BEVAP", "BIOTROP", "BOM FUTURO", "BRA Agroquímica", "BRENNTAG",
-        "BUNGE", "COMPASS MINERALS", "CORTEVA", "CROPFIELD", "CURA CAMPO", "DECAL", "DINAMICA",
-        "DISAM", "DVA", "ECOSORB", "EUROCHEM", "EXACTA", "FMC", "FOLTRON", "GAFOR", "GALEN",
-        "GIRO AGRO", "GOWAN", "GRAO DE OURO", "GRUPO ATUAL", "GRUPO FERTIPAR", "HELM",
-        "IHARABRAS", "IHARA", "IMETAME", "INNOVA", "JACTO", "KOPPERT", "LABORATÓRIO FARROUPILHA",
-        "LONZA", "LOUIS DREYFUS", "MICROQUIMICA", "MILLENNIUM", "NORTENE", "NORTOX",
-        "NUTRIPLAN", "OUROFINO", "OXIQUIMICA", "PERFINOR", "PETROBRAS", "PIONEER",
-        "PIRECAL", "PLANALTO", "PLANT DEFENDER", "PRODETER", "ROTAM", "SANDEZ", "SANDEZ AGRO",
-        "SANTA CLARA", "SIPCAM NICHINO", "SPEED AGRO", "STOCKOSORB", "SUMITOMO CHEMICAL",
-        "SYNGENTA", "TAGRO", "TECNOMYL", "TERRA DE CULTIVO", "TRADE CORP", "UPL", "VERDE",
-        "VIAMÃ", "VIGNIS", "VITTIA", "YARA"
+        {'nome': 'ADAMA', 'segmento': 'Agroquímicos'}, {'nome': 'ALBAUGH', 'segmento': 'Agroquímicos'},
+        {'nome': 'ARYSTA', 'segmento': 'Agroquímicos'}, {'nome': 'ASCENZA', 'segmento': 'Agroquímicos'},
+        {'nome': 'BASF', 'segmento': 'Agroquímicos'}, {'nome': 'BAYER', 'segmento': 'Agroquímicos'},
+        {'nome': 'BRA Agroquímica', 'segmento': 'Agroquímicos'}, {'nome': 'CORTEVA', 'segmento': 'Agroquímicos'},
+        {'nome': 'CROPFIELD', 'segmento': 'Agroquímicos'}, {'nome': 'DECAL', 'segmento': 'Agroquímicos'},
+        {'nome': 'DVA', 'segmento': 'Agroquímicos'}, {'nome': 'FMC', 'segmento': 'Agroquímicos'},
+        {'nome': 'GOWAN', 'segmento': 'Agroquímicos'}, {'nome': 'HELM', 'segmento': 'Agroquímicos'},
+        {'nome': 'IHARABRAS', 'segmento': 'Agroquímicos'}, {'nome': 'IHARA', 'segmento': 'Agroquímicos'},
+        {'nome': 'NORTOX', 'segmento': 'Agroquímicos'}, {'nome': 'OUROFINO', 'segmento': 'Agroquímicos'},
+        {'nome': 'ROTAM', 'segmento': 'Agroquímicos'}, {'nome': 'SANDEZ', 'segmento': 'Agroquímicos'},
+        {'nome': 'SANDEZ AGRO', 'segmento': 'Agroquímicos'}, {'nome': 'SIPCAM NICHINO', 'segmento': 'Agroquímicos'},
+        {'nome': 'SUMITOMO CHEMICAL', 'segmento': 'Agroquímicos'}, {'nome': 'SYNGENTA', 'segmento': 'Agroquímicos'},
+        {'nome': 'TECNOMYL', 'segmento': 'Agroquímicos'}, {'nome': 'UPL', 'segmento': 'Agroquímicos'},
+        {'nome': 'COMPASS MINERALS', 'segmento': 'Adubos/Fertilizantes'}, {'nome': 'EUROCHEM', 'segmento': 'Adubos/Fertilizantes'},
+        {'nome': 'GRUPO FERTIPAR', 'segmento': 'Adubos/Fertilizantes'}, {'nome': 'MICROQUIMICA', 'segmento': 'Adubos/Fertilizantes'},
+        {'nome': 'NUTRIPLAN', 'segmento': 'Adubos/Fertilizantes'}, {'nome': 'PIRECAL', 'segmento': 'Adubos/Fertilizantes'},
+        {'nome': 'VERDE', 'segmento': 'Adubos/Fertilizantes'}, {'nome': 'YARA', 'segmento': 'Adubos/Fertilizantes'},
+        {'nome': 'BIOTROP', 'segmento': 'Biológicos'}, {'nome': 'KOPPERT', 'segmento': 'Biológicos'},
+        {'nome': 'LABORATÓRIO FARROUPILHA', 'segmento': 'Biológicos'}, {'nome': 'PLANT DEFENDER', 'segmento': 'Biológicos'},
+        {'nome': 'VITTIA', 'segmento': 'Biológicos'},
+        {'nome': 'ARAG', 'segmento': 'Máquinas/Equipamentos'}, {'nome': 'JACTO', 'segmento': 'Máquinas/Equipamentos'},
+        {'nome': 'PIONEER', 'segmento': 'Sementes'},
+        {'nome': 'AGRO.ALL', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'AGROCP', 'segmento': 'Serviços/Tecnologia'},
+        {'nome': 'AGROFIT', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'AGROPLAN', 'segmento': 'Serviços/Tecnologia'},
+        {'nome': 'AGROPLANT', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'AGROSYSTEM', 'segmento': 'Serviços/Tecnologia'},
+        {'nome': 'ATAR', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'AUDACES', 'segmento': 'Serviços/Tecnologia'},
+        {'nome': 'EXACTA', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'GAFOR', 'segmento': 'Serviços/Tecnologia'},
+        {'nome': 'GIRO AGRO', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'GRUPO ATUAL', 'segmento': 'Serviços/Tecnologia'},
+        {'nome': 'IMETAME', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'INNOVA', 'segmento': 'Serviços/Tecnologia'},
+        {'nome': 'NORTENE', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'PERFINOR', 'segmento': 'Serviços/Tecnologia'},
+        {'nome': 'PRODETER', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'SPEED AGRO', 'segmento': 'Serviços/Tecnologia'},
+        {'nome': 'TAGRO', 'segmento': 'Serviços/Tecnologia'}, {'nome': 'TERRA DE CULTIVO', 'segmento': 'Serviços/Tecnologia'},
+        {'nome': 'AMIPAR', 'segmento': 'Distribuição'}, {'nome': 'BEVAP', 'segmento': 'Distribuição'},
+        {'nome': 'BOM FUTURO', 'segmento': 'Distribuição'}, {'nome': 'BRENNTAG', 'segmento': 'Distribuição'},
+        {'nome': 'BUNGE', 'segmento': 'Distribuição'}, {'nome': 'CURA CAMPO', 'segmento': 'Distribuição'},
+        {'nome': 'DINAMICA', 'segmento': 'Distribuição'}, {'nome': 'DISAM', 'segmento': 'Distribuição'},
+        {'nome': 'FOLTRON', 'segmento': 'Distribuição'}, {'nome': 'GALEN', 'segmento': 'Distribuição'},
+        {'nome': 'GRAO DE OURO', 'segmento': 'Distribuição'}, {'nome': 'LONZA', 'segmento': 'Distribuição'},
+        {'nome': 'LOUIS DREYFUS', 'segmento': 'Distribuição'}, {'nome': 'MILLENNIUM', 'segmento': 'Distribuição'},
+        {'nome': 'OXIQUIMICA', 'segmento': 'Distribuição'}, {'nome': 'PETROBRAS', 'segmento': 'Distribuição'},
+        {'nome': 'PLANALTO', 'segmento': 'Distribuição'}, {'nome': 'SANTA CLARA', 'segmento': 'Distribuição'},
+        {'nome': 'STOCKOSORB', 'segmento': 'Distribuição'}, {'nome': 'TRADE CORP', 'segmento': 'Distribuição'},
+        {'nome': 'VIAMÃ', 'segmento': 'Distribuição'}, {'nome': 'VIGNIS', 'segmento': 'Distribuição'}
     ],
-    "Victam Latam 2025": [
-        # A lista de expositores da Victam será adicionada aqui quando você a enviar.
-    ]
+    "Victam Latam 2025": []
 }
-
 
 # --- INICIALIZAÇÃO DO ESTADO DA SESSÃO ---
 if 'selected_event_index' not in st.session_state:
@@ -60,10 +91,6 @@ if 'selected_event_index' not in st.session_state:
 # --- FUNÇÕES DE PROCESSAMENTO ---
 @st.cache_data
 def carregar_e_limpar_dados():
-    """
-    Carrega os dados dos eventos diretamente do código.
-    """
-    # CORREÇÃO: A base de dados foi limpa para remover linhas mal formatadas.
     dados_string = """Mês,Evento,Foco,Data,Cidade,UF
 Janeiro,AgroShow Copagril 2026,Agronegócio,14 a 16,Marechal Cândido Rondon,PR
 Janeiro,COOLACER 2026,Tecnologia,28 e 29,Lacerdópolis,SC
@@ -142,7 +169,7 @@ Setembro,Semana Agronômica MS 2025,Agronomia,29 de setembro a 04 de outubro,Aqu
 Outubro,Rio + Agro,Tecnologia,01 a 03 de outubro,Rio de Janeiro,RJ
 Outubro,ZOOTEC 2025,Zootecnia,07 a 10 de outubro,Salvador,BA
 Outubro,Congresso Brasileiro de Agronomia (CBA) 2025,Agronomia,14 a 17 de outubro,Maceió,AL
-Outubro,FENASAN 2025,Saneamento e Meio Ambiente⁴,21 a 23 de outubro,São Paulo,SP
+Outubro,FENASAN 2025,Saneamento e Meio Ambiente,21 a 23 de outubro,São Paulo,SP
 Outubro,Congresso Nacional das Mulheres do Agronegócio (CNMA),Liderança Feminina no Agro,22 e 23 de outubro,São Paulo,SP
 Outubro,II Fórum Abisolo + III Simpósio Biofertilizantes,Fertilizantes,22 e 23 de outubro,Campinas,SP
 Outubro,COMCIR 2025,Cirurgia Veterinária,30 de outubro a 01 de novembro,Foz do Iguaçu,PR
@@ -169,7 +196,7 @@ Dezembro,Planejamento estratégico Agrolink,Estratégia,29 e 30 de dezembro,Port
 
 @st.cache_data
 def geocode_dataframe(df):
-    geolocator = Nominatim(user_agent="studio-data-dashboard-v13")
+    geolocator = Nominatim(user_agent="studio-data-dashboard-v14")
     location_coords = {}
     with st.spinner("A geocodificar localizações... (executado apenas uma vez)"):
         for index, row in df.iterrows():
@@ -194,19 +221,34 @@ try:
 
     with col2:
         st.subheader("Filtros e Controles")
-        selected_meses = st.multiselect("Filtrar por Mês:", options=sorted(df_base['Mes'].unique()))
-        selected_ufs = st.multiselect("Filtrar por Estado (UF):", options=sorted(df_base['UF'].unique()))
-        cidades_disponiveis = sorted(df_base[df_base['UF'].isin(selected_ufs)]['Cidade'].unique()) if selected_ufs else sorted(df_base['Cidade'].unique())
-        selected_cidades = st.multiselect("Filtrar por Cidade:", options=cidades_disponiveis)
 
+        # --- FILTROS ---
+        # Ordenação cronológica para os meses
+        meses_ordem = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+        meses_disponiveis = sorted(df_base['Mes'].unique(), key=lambda x: meses_ordem.index(x))
+        
+        # O estado dos filtros é guardado no session_state
+        if 'meses' not in st.session_state:
+            st.session_state.meses = []
+        if 'ufs' not in st.session_state:
+            st.session_state.ufs = []
+
+        st.session_state.meses = st.multiselect("Filtrar por Mês:", options=meses_disponiveis, default=st.session_state.meses)
+        st.session_state.ufs = st.multiselect("Filtrar por Estado (UF):", options=sorted(df_base['UF'].unique()), default=st.session_state.ufs)
+        
+        if st.button("Limpar Filtros"):
+            st.session_state.meses = []
+            st.session_state.ufs = []
+            st.rerun()
+
+        # Aplica os filtros
         df_filtrado = df_base.copy()
-        if selected_meses:
-            df_filtrado = df_filtrado[df_filtrado['Mes'].isin(selected_meses)]
-        if selected_ufs:
-            df_filtrado = df_filtrado[df_filtrado['UF'].isin(selected_ufs)]
-        if selected_cidades:
-            df_filtrado = df_filtrado[df_filtrado['Cidade'].isin(selected_cidades)]
+        if st.session_state.meses:
+            df_filtrado = df_filtrado[df_filtrado['Mes'].isin(st.session_state.meses)]
+        if st.session_state.ufs:
+            df_filtrado = df_filtrado[df_filtrado['UF'].isin(st.session_state.ufs)]
 
+        # --- SELEÇÃO DE DESTAQUE ---
         event_list = df_filtrado['Nome'].tolist()
         event_list.insert(0, "Limpar seleção e resetar mapa")
         
@@ -217,25 +259,24 @@ try:
         else:
             st.session_state.selected_event_index = None
         
+        # --- EXIBIÇÃO DA TABELA E EXPOSITORES ---
         st.subheader("Dados dos Eventos")
-        st.dataframe(df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']], use_container_width=True, hide_index=True, height=250) # Altura ajustada
+        st.dataframe(df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']], use_container_width=True, hide_index=True, height=250)
 
-        # --- NOVA SEÇÃO DE EXPOSITORES ---
         if selected_event_name and selected_event_name in expositores_db:
-            with st.expander(f"Ver Expositores de {selected_event_name}", expanded=True):
-                lista_expositores = expositores_db[selected_event_name]
+            with st.expander(f"Expositores de {selected_event_name}", expanded=True):
+                expositores = pd.DataFrame(expositores_db[selected_event_name])
+                segmentos = sorted(expositores['segmento'].unique())
                 
-                # Barra de pesquisa para os expositores
-                search_term = st.text_input("Pesquisar expositor:", key=f"search_{selected_event_name}")
-                if search_term:
-                    lista_expositores = [exp for exp in lista_expositores if search_term.lower() in exp.lower()]
-                
-                # Exibe a lista em colunas para melhor aproveitamento do espaço
-                num_cols = 3
-                cols = st.columns(num_cols)
-                for i, expositor in enumerate(sorted(lista_expositores)):
-                    with cols[i % num_cols]:
-                        st.markdown(f"- {expositor}")
+                for segmento in segmentos:
+                    st.markdown(f"**{segmento}**")
+                    expositores_segmento = expositores[expositores['segmento'] == segmento]['nome']
+                    
+                    # Exibe em colunas para melhor aproveitamento do espaço
+                    num_cols = 2
+                    cols = st.columns(num_cols)
+                    for i, nome in enumerate(sorted(expositores_segmento)):
+                        cols[i % num_cols].markdown(f"- {nome}")
 
     with col1:
         st.subheader("Mapa Interativo dos Eventos")
