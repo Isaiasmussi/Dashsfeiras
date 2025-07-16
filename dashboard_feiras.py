@@ -15,7 +15,7 @@ st.set_page_config(
 # Injetando CSS para os ajustes visuais do mapa
 st.markdown("""
     <style>
-        /* CORREÇÃO DEFINITIVA: Alvo é o container do mapa pela sua estrutura */
+        /* Arredonda as bordas do container do mapa */
         div[data-testid="stHorizontalBlock"] > div:first-child > div[data-testid="stVerticalBlock"] > div:nth-child(2) {
             border-radius: 15px;
             overflow: hidden; /* Essencial para que o conteúdo (mapa) respeite as bordas */
@@ -30,6 +30,30 @@ st.markdown("""
 
 st.title("Dashboard de Feiras e Eventos Agro")
 
+# --- BASE DE DADOS DOS EXPOSITORES ---
+# Esta estrutura irá guardar as listas de expositores para cada evento.
+expositores_db = {
+    "Congresso Andav 2025": [
+        "ADAMA", "AGRO.ALL", "AGROCP", "AGROFIT", "AGROPLAN", "AGROPLANT", "AGROSYSTEM",
+        "AGROVANT", "ALBAUGH", "AMIPAR", "ARAG", "ARYSTA", "ASCENZA", "ATAR", "AUDACES",
+        "BASF", "BAYER", "BEVAP", "BIOTROP", "BOM FUTURO", "BRA Agroquímica", "BRENNTAG",
+        "BUNGE", "COMPASS MINERALS", "CORTEVA", "CROPFIELD", "CURA CAMPO", "DECAL", "DINAMICA",
+        "DISAM", "DVA", "ECOSORB", "EUROCHEM", "EXACTA", "FMC", "FOLTRON", "GAFOR", "GALEN",
+        "GIRO AGRO", "GOWAN", "GRAO DE OURO", "GRUPO ATUAL", "GRUPO FERTIPAR", "HELM",
+        "IHARABRAS", "IHARA", "IMETAME", "INNOVA", "JACTO", "KOPPERT", "LABORATÓRIO FARROUPILHA",
+        "LONZA", "LOUIS DREYFUS", "MICROQUIMICA", "MILLENNIUM", "NORTENE", "NORTOX",
+        "NUTRIPLAN", "OUROFINO", "OXIQUIMICA", "PERFINOR", "PETROBRAS", "PIONEER",
+        "PIRECAL", "PLANALTO", "PLANT DEFENDER", "PRODETER", "ROTAM", "SANDEZ", "SANDEZ AGRO",
+        "SANTA CLARA", "SIPCAM NICHINO", "SPEED AGRO", "STOCKOSORB", "SUMITOMO CHEMICAL",
+        "SYNGENTA", "TAGRO", "TECNOMYL", "TERRA DE CULTIVO", "TRADE CORP", "UPL", "VERDE",
+        "VIAMÃ", "VIGNIS", "VITTIA", "YARA"
+    ],
+    "Victam Latam 2025": [
+        # A lista de expositores da Victam será adicionada aqui quando você a enviar.
+    ]
+}
+
+
 # --- INICIALIZAÇÃO DO ESTADO DA SESSÃO ---
 if 'selected_event_index' not in st.session_state:
     st.session_state.selected_event_index = None
@@ -38,9 +62,8 @@ if 'selected_event_index' not in st.session_state:
 @st.cache_data
 def carregar_e_limpar_dados():
     """
-    Carrega os dados diretamente do código. A base de dados foi expandida.
+    Carrega os dados dos eventos diretamente do código.
     """
-    # BASE DE DADOS ATUALIZADA com os novos eventos
     dados_string = """Mês,Evento,Foco,Data,Cidade,UF
 Janeiro,AgroShow Copagril 2026,Agronegócio,14 a 16,Marechal Cândido Rondon,PR
 Janeiro,COOLACER 2026,Tecnologia,28 e 29,Lacerdópolis,SC
@@ -134,12 +157,10 @@ Dezembro,Prêmio Visão Agro Brasil 2025,Bioenergia,04 de dezembro,Ribeirão Pre
 Dezembro,Planejamento estratégico Agrolink,Estratégia,29 e 30 de dezembro,Porto Alegre,RS
 """
     df = pd.read_csv(io.StringIO(dados_string))
-    # Tratamento de dados para garantir a consistência
     df['Cidade'] = df['Cidade'].str.strip()
     df['UF'] = df['UF'].str.strip()
     df.dropna(subset=['Evento', 'Cidade', 'UF'], inplace=True)
     df = df[~df['Cidade'].str.contains('A definir|Online', na=False)]
-    
     df['Mês'] = df['Mês'].ffill()
     df['Localizacao'] = df['Cidade'] + ', ' + df['UF']
     df.rename(columns={'Mês': 'Mes', 'Evento': 'Nome', 'Foco': 'Segmento', 'Data': 'Datas'}, inplace=True)
@@ -196,7 +217,24 @@ try:
             st.session_state.selected_event_index = None
         
         st.subheader("Dados dos Eventos")
-        st.dataframe(df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']], use_container_width=True, hide_index=True, height=350)
+        st.dataframe(df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']], use_container_width=True, hide_index=True, height=250) # Altura ajustada
+
+        # --- NOVA SEÇÃO DE EXPOSITORES ---
+        if selected_event_name and selected_event_name in expositores_db:
+            with st.expander(f"Ver Expositores de {selected_event_name}", expanded=True):
+                lista_expositores = expositores_db[selected_event_name]
+                
+                # Barra de pesquisa para os expositores
+                search_term = st.text_input("Pesquisar expositor:", key=f"search_{selected_event_name}")
+                if search_term:
+                    lista_expositores = [exp for exp in lista_expositores if search_term.lower() in exp.lower()]
+                
+                # Exibe a lista em colunas para melhor aproveitamento do espaço
+                num_cols = 3
+                cols = st.columns(num_cols)
+                for i, expositor in enumerate(sorted(lista_expositores)):
+                    with cols[i % num_cols]:
+                        st.markdown(f"- {expositor}")
 
     with col1:
         st.subheader("Mapa Interativo dos Eventos")
