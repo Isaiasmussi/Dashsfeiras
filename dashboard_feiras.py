@@ -28,11 +28,12 @@ st.markdown("""
         .leaflet-control-attribution {
             display: none !important;
         }
-        /* Estilo para o botão de limpar filtros */
-        div[data-testid="stHorizontalBlock"] button {
+        /* Estilo para o botão de limpar filtros, posicionado de forma específica */
+        div[data-testid="stVerticalBlock"] > div:nth-child(1) > div[data-testid="stHorizontalBlock"] > div:nth-child(1) button {
             width: auto;
-            padding: 4px 10px;
+            padding: 4px 12px;
             font-size: 0.9rem;
+            margin-top: 10px;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -91,13 +92,12 @@ expositores_db = {
 }
 
 # --- INICIALIZAÇÃO DO ESTADO DA SESSÃO ---
-# Inicializa as chaves no session_state para os filtros
+if 'selected_event_index' not in st.session_state:
+    st.session_state.selected_event_index = None
 if 'meses_selecionados' not in st.session_state:
     st.session_state.meses_selecionados = []
 if 'ufs_selecionados' not in st.session_state:
     st.session_state.ufs_selecionados = []
-if 'evento_selecionado' not in st.session_state:
-    st.session_state.evento_selecionado = None
 
 # --- FUNÇÕES DE PROCESSAMENTO ---
 @st.cache_data
@@ -226,8 +226,7 @@ def geocode_dataframe(df):
 def limpar_filtros():
     st.session_state.meses_selecionados = []
     st.session_state.ufs_selecionados = []
-    st.session_state.evento_selecionado = "Limpar seleção e resetar mapa"
-
+    # Não precisa mais de um rerun explícito aqui, o Streamlit gerencia isso.
 
 # --- EXECUÇÃO PRINCIPAL ---
 try:
@@ -239,30 +238,33 @@ try:
 
     with col2:
         st.subheader("Filtros e Controles")
+        
+        # O botão agora usa a função de callback e está posicionado no topo
         st.button("Limpar Filtros", on_click=limpar_filtros)
 
         # --- FILTROS ---
         meses_ordem = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
         meses_disponiveis = sorted(df_base['Mes'].unique(), key=lambda x: meses_ordem.index(x))
         
-        st.session_state.meses_selecionados = st.multiselect("Filtrar por Mês:", options=meses_disponiveis, default=st.session_state.meses_selecionados)
-        st.session_state.ufs_selecionados = st.multiselect("Filtrar por Estado (UF):", options=sorted(df_base['UF'].unique()), default=st.session_state.ufs_selecionados)
+        # Os widgets agora usam chaves únicas para evitar conflitos de estado
+        meses_selecionados = st.multiselect("Filtrar por Mês:", options=meses_disponiveis, key='meses_selecionados')
+        ufs_selecionados = st.multiselect("Filtrar por Estado (UF):", options=sorted(df_base['UF'].unique()), key='ufs_selecionados')
         
         # Aplica os filtros
         df_filtrado = df_base.copy()
-        if st.session_state.meses_selecionados:
-            df_filtrado = df_filtrado[df_filtrado['Mes'].isin(st.session_state.meses_selecionados)]
-        if st.session_state.ufs_selecionados:
-            df_filtrado = df_filtrado[df_filtrado['UF'].isin(st.session_state.ufs_selecionados)]
+        if meses_selecionados:
+            df_filtrado = df_filtrado[df_filtrado['Mes'].isin(meses_selecionados)]
+        if ufs_selecionados:
+            df_filtrado = df_filtrado[df_filtrado['UF'].isin(ufs_selecionados)]
 
         # --- SELEÇÃO DE DESTAQUE ---
         event_list = df_filtrado['Nome'].tolist()
         event_list.insert(0, "Limpar seleção e resetar mapa")
         
-        st.session_state.evento_selecionado = st.selectbox("Selecione um evento para destacar no mapa:", options=event_list, key='selectbox_evento')
+        selected_event_name = st.selectbox("Selecione um evento para destacar no mapa:", options=event_list, index=0)
 
-        if st.session_state.evento_selecionado != "Limpar seleção e resetar mapa":
-            st.session_state.selected_event_index = df_filtrado[df_filtrado['Nome'] == st.session_state.evento_selecionado].index[0]
+        if selected_event_name != "Limpar seleção e resetar mapa":
+            st.session_state.selected_event_index = df_filtrado[df_filtrado['Nome'] == selected_event_name].index[0]
         else:
             st.session_state.selected_event_index = None
         
@@ -270,9 +272,9 @@ try:
         st.subheader("Dados dos Eventos")
         st.dataframe(df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']], use_container_width=True, hide_index=True, height=250)
 
-        if st.session_state.evento_selecionado and st.session_state.evento_selecionado in expositores_db:
-            with st.expander(f"Expositores de {st.session_state.evento_selecionado}", expanded=True):
-                expositores = pd.DataFrame(expositores_db[st.session_state.evento_selecionado])
+        if selected_event_name and selected_event_name in expositores_db:
+            with st.expander(f"Expositores de {selected_event_name}", expanded=True):
+                expositores = pd.DataFrame(expositores_db[selected_event_name])
                 segmentos = sorted(expositores['segmento'].unique())
                 
                 for segmento in segmentos:
