@@ -45,8 +45,11 @@ st.markdown("""
             width: 50%; max-width: 600px; border: 1px solid #444; position: relative;
         }
         .close-button {
-            position: absolute; top: 10px; right: 15px; color: #aaa; font-size: 28px;
-            font-weight: bold; cursor: pointer;
+            position: absolute; top: 10px; right: 20px; color: #aaa; font-size: 28px;
+            font-weight: bold; cursor: pointer; text-decoration: none;
+        }
+        .close-button:hover {
+            color: #fff;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -240,6 +243,11 @@ def close_modal():
 
 # --- EXECUÇÃO PRINCIPAL ---
 try:
+    # Lógica para fechar o modal via query_params
+    if "close_modal" in st.query_params:
+        close_modal()
+        st.query_params.clear()
+
     df_completo = carregar_e_limpar_dados()
     df_geocoded = geocode_dataframe(df_completo.copy())
     df_base = df_geocoded.dropna(subset=['Latitude', 'Longitude']).copy()
@@ -292,7 +300,6 @@ try:
                         expositores_segmento = expositores_exploded[expositores_exploded['segmento'] == segmento]
                         
                         for _, row in expositores_segmento.iterrows():
-                            # CORREÇÃO: Passa o dicionário original, não o da linha explodida
                             original_expositor_data = expositores[expositores['nome'] == row['nome']].iloc[0].to_dict()
                             if st.button(row['nome'], key=f"{selected_event_name}_{row['nome']}_{segmento}", use_container_width=True):
                                 show_expositor_modal(original_expositor_data)
@@ -300,20 +307,18 @@ try:
     # --- LÓGICA DO MODAL (Fora das colunas) ---
     if st.session_state.modal_expositor:
         expositor = st.session_state.modal_expositor
-        # O onclick no div de fundo agora chama a função de fechar
+        # CORREÇÃO: O link do 'X' e do fundo agora aponta para a URL com um parâmetro para fechar
         st.markdown(f"""
-            <div class="modal" onclick="document.getElementById('close_modal_button').click()">
+            <a href="?close_modal=true" class="modal">
                 <div class="modal-content" onclick="event.stopPropagation()">
-                    <span class="close-button" onclick="document.getElementById('close_modal_button').click()">&times;</span>
+                    <a href="?close_modal=true" class="close-button">&times;</a>
                     <h3>{expositor['nome']}</h3>
                     <p><b>Segmentos:</b> {', '.join(expositor['segmento'])}</p>
                     <hr>
                     <p>{expositor['descricao']}</p>
                 </div>
-            </div>
+            </a>
         """, unsafe_allow_html=True)
-        # Botão invisível que a ação de fechar irá "clicar"
-        st.button("Fechar", key="close_modal_button", on_click=close_modal)
 
 
     with col1:
