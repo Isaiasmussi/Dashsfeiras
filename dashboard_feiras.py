@@ -87,10 +87,10 @@ if 'meses_selecionados' not in st.session_state:
     st.session_state.meses_selecionados = []
 if 'ufs_selecionados' not in st.session_state:
     st.session_state.ufs_selecionados = []
-if 'show_modal' not in st.session_state:
-    st.session_state.show_modal = False
-if 'modal_content' not in st.session_state:
-    st.session_state.modal_content = {}
+if 'show_expositor_details' not in st.session_state:
+    st.session_state.show_expositor_details = False
+if 'expositor_details' not in st.session_state:
+    st.session_state.expositor_details = {}
 
 
 # --- FUNÇÕES DE PROCESSAMENTO ---
@@ -221,32 +221,11 @@ def limpar_filtros():
     st.session_state.meses_selecionados = []
     st.session_state.ufs_selecionados = []
 
-def show_expositor_modal(expositor):
-    st.session_state.show_modal = True
-    st.session_state.modal_content = expositor
-
-def close_modal():
-    st.session_state.show_modal = False
-    st.session_state.modal_content = {}
-
-
 # --- EXECUÇÃO PRINCIPAL ---
 try:
     df_completo = carregar_e_limpar_dados()
     df_geocoded = geocode_dataframe(df_completo.copy())
     df_base = df_geocoded.dropna(subset=['Latitude', 'Longitude']).copy()
-
-    # --- LÓGICA DO MODAL (st.dialog) ---
-    if st.session_state.show_modal:
-        with st.dialog("Detalhes do Expositor"):
-            content = st.session_state.modal_content
-            st.subheader(content['nome'])
-            st.write(f"**Segmentos:** {', '.join(content['segmento'])}")
-            st.divider()
-            st.write(content['descricao'])
-            if st.button("Fechar", key="close_dialog"):
-                close_modal()
-                st.rerun()
 
     col1, col2 = st.columns([3, 2])
 
@@ -298,7 +277,22 @@ try:
                         for _, row in expositores_segmento.iterrows():
                             original_expositor_data = expositores[expositores['nome'] == row['nome']].iloc[0].to_dict()
                             if st.button(row['nome'], key=f"{selected_event_name}_{row['nome']}_{segmento}", use_container_width=True):
-                                show_expositor_modal(original_expositor_data)
+                                # Define o conteúdo e mostra o "modal"
+                                st.session_state.expositor_details = original_expositor_data
+                                st.session_state.show_expositor_details = True
+                                st.rerun()
+
+    # --- LÓGICA DO "MODAL" NATIVO (FORA DAS COLUNAS) ---
+    if st.session_state.get('show_expositor_details', False):
+        with st.container(border=True):
+            content = st.session_state.expositor_details
+            st.subheader(content['nome'])
+            st.write(f"**Segmentos:** {', '.join(content['segmento'])}")
+            st.divider()
+            st.write(content['descricao'])
+            if st.button("Fechar", key="close_dialog"):
+                st.session_state.show_expositor_details = False
+                st.rerun()
 
     with col1:
         st.subheader("Mapa Interativo dos Eventos")
