@@ -38,11 +38,15 @@ st.markdown("""
         /* Estilo para o modal de descrição */
         .modal {
             position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+            background-color: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
         }
         .modal-content {
             background-color: #262730; color: #FAFAFA; padding: 25px; border-radius: 10px;
-            width: 50%; max-width: 600px; border: 1px solid #444;
+            width: 50%; max-width: 600px; border: 1px solid #444; position: relative;
+        }
+        .close-button {
+            position: absolute; top: 10px; right: 15px; color: #aaa; font-size: 28px;
+            font-weight: bold; cursor: pointer;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -231,6 +235,9 @@ def limpar_filtros():
 def show_expositor_modal(expositor):
     st.session_state.modal_expositor = expositor
 
+def close_modal():
+    st.session_state.modal_expositor = None
+
 # --- EXECUÇÃO PRINCIPAL ---
 try:
     df_completo = carregar_e_limpar_dados()
@@ -270,7 +277,6 @@ try:
 
         # --- LÓGICA DE EXIBIÇÃO DOS EXPOSITORES ---
         if selected_event_name and selected_event_name in expositores_db:
-            # CORREÇÃO: Verifica se a lista de expositores não está vazia antes de processar
             lista_de_expositores = expositores_db[selected_event_name]
             if not lista_de_expositores:
                 with st.expander(f"Expositores de {selected_event_name}", expanded=True):
@@ -278,8 +284,6 @@ try:
             else:
                 with st.expander(f"Expositores de {selected_event_name}", expanded=True):
                     expositores = pd.DataFrame(lista_de_expositores)
-                    
-                    # Desagrupa os segmentos para que uma empresa possa aparecer em várias categorias
                     expositores_exploded = expositores.explode('segmento')
                     segmentos = sorted(expositores_exploded['segmento'].unique())
                     
@@ -288,15 +292,19 @@ try:
                         expositores_segmento = expositores_exploded[expositores_exploded['segmento'] == segmento]
                         
                         for _, row in expositores_segmento.iterrows():
+                            # CORREÇÃO: Passa o dicionário original, não o da linha explodida
+                            original_expositor_data = expositores[expositores['nome'] == row['nome']].iloc[0].to_dict()
                             if st.button(row['nome'], key=f"{selected_event_name}_{row['nome']}_{segmento}", use_container_width=True):
-                                show_expositor_modal(row.to_dict())
+                                show_expositor_modal(original_expositor_data)
 
-    # --- LÓGICA DO MODAL ---
+    # --- LÓGICA DO MODAL (Fora das colunas) ---
     if st.session_state.modal_expositor:
         expositor = st.session_state.modal_expositor
+        # O onclick no div de fundo agora chama a função de fechar
         st.markdown(f"""
             <div class="modal" onclick="document.getElementById('close_modal_button').click()">
-                <div class="modal-content">
+                <div class="modal-content" onclick="event.stopPropagation()">
+                    <span class="close-button" onclick="document.getElementById('close_modal_button').click()">&times;</span>
                     <h3>{expositor['nome']}</h3>
                     <p><b>Segmentos:</b> {', '.join(expositor['segmento'])}</p>
                     <hr>
@@ -304,10 +312,8 @@ try:
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        # O botão para fechar o modal fica "invisível" mas funcional
-        if st.button("Fechar", key="close_modal_button", help="Clique para fechar"):
-             st.session_state.modal_expositor = None
-             st.rerun()
+        # Botão invisível que a ação de fechar irá "clicar"
+        st.button("Fechar", key="close_modal_button", on_click=close_modal)
 
 
     with col1:
