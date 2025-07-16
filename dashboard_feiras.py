@@ -35,22 +35,6 @@ st.markdown("""
             font-size: 0.9rem;
             margin-top: 10px;
         }
-        /* Estilo para o modal de descrição */
-        .modal {
-            position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
-        }
-        .modal-content {
-            background-color: #262730; color: #FAFAFA; padding: 25px; border-radius: 10px;
-            width: 50%; max-width: 600px; border: 1px solid #444; position: relative;
-        }
-        .close-button {
-            position: absolute; top: 10px; right: 20px; color: #aaa; font-size: 28px;
-            font-weight: bold; cursor: pointer; text-decoration: none;
-        }
-        .close-button:hover {
-            color: #fff;
-        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -103,8 +87,10 @@ if 'meses_selecionados' not in st.session_state:
     st.session_state.meses_selecionados = []
 if 'ufs_selecionados' not in st.session_state:
     st.session_state.ufs_selecionados = []
-if 'modal_expositor' not in st.session_state:
-    st.session_state.modal_expositor = None
+if 'show_modal' not in st.session_state:
+    st.session_state.show_modal = False
+if 'modal_content' not in st.session_state:
+    st.session_state.modal_content = {}
 
 
 # --- FUNÇÕES DE PROCESSAMENTO ---
@@ -236,21 +222,31 @@ def limpar_filtros():
     st.session_state.ufs_selecionados = []
 
 def show_expositor_modal(expositor):
-    st.session_state.modal_expositor = expositor
+    st.session_state.show_modal = True
+    st.session_state.modal_content = expositor
 
 def close_modal():
-    st.session_state.modal_expositor = None
+    st.session_state.show_modal = False
+    st.session_state.modal_content = {}
+
 
 # --- EXECUÇÃO PRINCIPAL ---
 try:
-    # Lógica para fechar o modal via query_params
-    if "close_modal" in st.query_params:
-        close_modal()
-        st.query_params.clear()
-
     df_completo = carregar_e_limpar_dados()
     df_geocoded = geocode_dataframe(df_completo.copy())
     df_base = df_geocoded.dropna(subset=['Latitude', 'Longitude']).copy()
+
+    # --- LÓGICA DO MODAL (st.dialog) ---
+    if st.session_state.show_modal:
+        with st.dialog("Detalhes do Expositor"):
+            content = st.session_state.modal_content
+            st.subheader(content['nome'])
+            st.write(f"**Segmentos:** {', '.join(content['segmento'])}")
+            st.divider()
+            st.write(content['descricao'])
+            if st.button("Fechar", key="close_dialog"):
+                close_modal()
+                st.rerun()
 
     col1, col2 = st.columns([3, 2])
 
@@ -303,23 +299,6 @@ try:
                             original_expositor_data = expositores[expositores['nome'] == row['nome']].iloc[0].to_dict()
                             if st.button(row['nome'], key=f"{selected_event_name}_{row['nome']}_{segmento}", use_container_width=True):
                                 show_expositor_modal(original_expositor_data)
-
-    # --- LÓGICA DO MODAL (Fora das colunas) ---
-    if st.session_state.modal_expositor:
-        expositor = st.session_state.modal_expositor
-        # CORREÇÃO: O link do 'X' e do fundo agora aponta para a URL com um parâmetro para fechar
-        st.markdown(f"""
-            <a href="?close_modal=true" class="modal">
-                <div class="modal-content" onclick="event.stopPropagation()">
-                    <a href="?close_modal=true" class="close-button">&times;</a>
-                    <h3>{expositor['nome']}</h3>
-                    <p><b>Segmentos:</b> {', '.join(expositor['segmento'])}</p>
-                    <hr>
-                    <p>{expositor['descricao']}</p>
-                </div>
-            </a>
-        """, unsafe_allow_html=True)
-
 
     with col1:
         st.subheader("Mapa Interativo dos Eventos")
