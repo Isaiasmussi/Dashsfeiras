@@ -35,11 +35,18 @@ st.markdown("""
             font-size: 0.9rem;
             margin-top: 10px;
         }
-        /* Alinha o container do logout à direita */
-        div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
+        /* Container para o logout */
+        .logout-container {
+            text-align: right;
+        }
+        /* Estilo do link de logout */
+        .logout-link {
+            font-size: 0.9rem;
+            color: #aaa !important;
+            text-decoration: underline !important;
+        }
+        .logout-link:hover {
+            color: #fff !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -223,12 +230,7 @@ def main_dashboard():
     with header_cols[0]:
         st.title("Dashboard de Feiras e Eventos Agro")
     with header_cols[1]:
-        st.caption(f"Utilizador: {st.session_state['username']}")
-        if st.button("Sair", key="logout_button"):
-            for key in list(st.session_state.keys()):
-                if key != 'df_base': # Mantém os dados cacheados
-                    del st.session_state[key]
-            st.rerun()
+        st.markdown(f"<div class='logout-container'><span style='font-size: 0.9rem; color: #aaa;'>Utilizador: {st.session_state['username']}</span><br><a href='?logout=true' class='logout-link'>Sair</a></div>", unsafe_allow_html=True)
     
     st.divider()
 
@@ -338,6 +340,12 @@ def main_dashboard():
 # --- LÓGICA DE LOGIN ---
 def check_login():
     """Retorna `True` se o utilizador estiver autenticado."""
+    # Verifica se o logout foi acionado via URL
+    if st.query_params.get("logout"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.query_params.clear()
+
     if st.session_state.get("logged_in"):
         return True
 
