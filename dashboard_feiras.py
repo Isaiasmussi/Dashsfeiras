@@ -212,14 +212,20 @@ def main_dashboard():
     if 'expositor_details' not in st.session_state:
         st.session_state.expositor_details = {}
 
-    st.sidebar.subheader(f"Bem-vindo, {st.session_state['username']}!")
-    if st.sidebar.button("Sair"):
-        for key in list(st.session_state.keys()):
-            if key != 'df_base': # Mantém os dados cacheados
-                del st.session_state[key]
-        st.rerun()
+    # --- NOVO CABEÇALHO ---
+    header_cols = st.columns([0.85, 0.15])
+    with header_cols[0]:
+        st.title("Dashboard de Feiras e Eventos Agro")
+        st.caption(f"Utilizador: {st.session_state['username']}")
+    with header_cols[1]:
+        st.write("") # Espaçamento
+        if st.button("Sair"):
+            for key in list(st.session_state.keys()):
+                if key != 'df_base': # Mantém os dados cacheados
+                    del st.session_state[key]
+            st.rerun()
     
-    st.title("Dashboard de Feiras e Eventos Agro")
+    st.divider()
 
     df_base = st.session_state.df_base
 
