@@ -35,6 +35,12 @@ st.markdown("""
             font-size: 0.9rem;
             margin-top: 10px;
         }
+        /* Alinha o container do logout à direita */
+        div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -213,13 +219,12 @@ def main_dashboard():
         st.session_state.expositor_details = {}
 
     # --- NOVO CABEÇALHO ---
-    header_cols = st.columns([0.85, 0.15])
+    header_cols = st.columns([0.8, 0.2])
     with header_cols[0]:
         st.title("Dashboard de Feiras e Eventos Agro")
-        st.caption(f"Utilizador: {st.session_state['username']}")
     with header_cols[1]:
-        st.write("") # Espaçamento
-        if st.button("Sair"):
+        st.caption(f"Utilizador: {st.session_state['username']}")
+        if st.button("Sair", key="logout_button"):
             for key in list(st.session_state.keys()):
                 if key != 'df_base': # Mantém os dados cacheados
                     del st.session_state[key]
