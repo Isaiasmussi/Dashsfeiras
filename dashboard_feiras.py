@@ -39,9 +39,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 
-st.title("Dashboard de Feiras e Eventos Agro")
-
-# --- BASE DE DADOS DOS EXPOSITORES (ESTRUTURA AVANÇADA) ---
+# --- BASE DE DADOS DOS EXPOSITORES ---
 expositores_db = {
     "Congresso Andav 2025": [
         {'nome': 'ADAMA', 'segmento': ['Agroquímicos'], 'descricao': 'Líder global em proteção de cultivos, fornecendo soluções para agricultores em todo o mundo.'},
@@ -78,20 +76,6 @@ expositores_db = {
         {'nome': 'Zheng', 'segmento': ['Equipamentos'], 'descricao': 'Descrição não disponível.'}
     ]
 }
-
-
-# --- INICIALIZAÇÃO DO ESTADO DA SESSÃO ---
-if 'selected_event_index' not in st.session_state:
-    st.session_state.selected_event_index = None
-if 'meses_selecionados' not in st.session_state:
-    st.session_state.meses_selecionados = []
-if 'ufs_selecionados' not in st.session_state:
-    st.session_state.ufs_selecionados = []
-if 'show_expositor_details' not in st.session_state:
-    st.session_state.show_expositor_details = False
-if 'expositor_details' not in st.session_state:
-    st.session_state.expositor_details = {}
-
 
 # --- FUNÇÕES DE PROCESSAMENTO ---
 @st.cache_data
@@ -216,22 +200,32 @@ def geocode_dataframe(df):
     df['Longitude'] = df['Localizacao'].map(lambda x: location_coords.get(x, (None, None))[1])
     return df
 
-# --- CALLBACKS ---
-def limpar_filtros():
-    st.session_state.meses_selecionados = []
-    st.session_state.ufs_selecionados = []
-    st.session_state.show_expositor_details = False # Também esconde os detalhes
+# --- FUNÇÃO DO DASHBOARD PRINCIPAL ---
+def main_dashboard():
+    # Inicializa o estado da sessão para os filtros se não existirem
+    if 'meses_selecionados' not in st.session_state:
+        st.session_state.meses_selecionados = []
+    if 'ufs_selecionados' not in st.session_state:
+        st.session_state.ufs_selecionados = []
+    if 'show_expositor_details' not in st.session_state:
+        st.session_state.show_expositor_details = False
+    if 'expositor_details' not in st.session_state:
+        st.session_state.expositor_details = {}
 
-# --- EXECUÇÃO PRINCIPAL ---
-try:
-    df_completo = carregar_e_limpar_dados()
-    df_geocoded = geocode_dataframe(df_completo.copy())
-    df_base = df_geocoded.dropna(subset=['Latitude', 'Longitude']).copy()
+    st.sidebar.subheader(f"Bem-vindo, {st.session_state['username']}!")
+    if st.sidebar.button("Sair"):
+        for key in list(st.session_state.keys()):
+            if key != 'df_base': # Mantém os dados cacheados
+                del st.session_state[key]
+        st.rerun()
+    
+    st.title("Dashboard de Feiras e Eventos Agro")
+
+    df_base = st.session_state.df_base
 
     col1, col2 = st.columns([3, 2])
 
     with col2:
-        # --- CONTAINER PARA DETALHES DO EXPOSITOR (NO TOPO) ---
         details_placeholder = st.container()
         if st.session_state.get('show_expositor_details', False):
             with details_placeholder.container(border=True):
@@ -245,14 +239,20 @@ try:
                     st.rerun()
 
         st.subheader("Filtros e Controles")
-        st.button("Limpar Filtros", on_click=limpar_filtros)
+        if st.button("Limpar Filtros"):
+            st.session_state.meses_selecionados = []
+            st.session_state.ufs_selecionados = []
+            st.rerun()
 
         meses_ordem = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
         meses_disponiveis = sorted(df_base['Mes'].unique(), key=lambda x: meses_ordem.index(x))
         
-        meses_selecionados = st.multiselect("Filtrar por Mês:", options=meses_disponiveis, key='meses_selecionados')
-        ufs_selecionados = st.multiselect("Filtrar por Estado (UF):", options=sorted(df_base['UF'].unique()), key='ufs_selecionados')
+        meses_selecionados = st.multiselect("Filtrar por Mês:", options=meses_disponiveis, default=st.session_state.meses_selecionados)
+        ufs_selecionados = st.multiselect("Filtrar por Estado (UF):", options=sorted(df_base['UF'].unique()), default=st.session_state.ufs_selecionados)
         
+        st.session_state.meses_selecionados = meses_selecionados
+        st.session_state.ufs_selecionados = ufs_selecionados
+
         df_filtrado = df_base.copy()
         if meses_selecionados:
             df_filtrado = df_filtrado[df_filtrado['Mes'].isin(meses_selecionados)]
@@ -272,7 +272,6 @@ try:
         st.subheader("Dados dos Eventos")
         st.dataframe(df_filtrado[['Nome', 'Datas', 'Segmento', 'Cidade', 'UF']], use_container_width=True, hide_index=True, height=250)
 
-        # --- LÓGICA DE EXIBIÇÃO DOS EXPOSITORES ---
         if selected_event_name and selected_event_name in expositores_db:
             lista_de_expositores = expositores_db[selected_event_name]
             if not lista_de_expositores:
@@ -325,6 +324,40 @@ try:
         
         st_folium(m, use_container_width=True, returned_objects=[])
 
-except Exception as e:
-    st.error(f"Ocorreu um erro inesperado durante a execução: {e}")
+# --- LÓGICA DE LOGIN ---
+def check_login():
+    """Retorna `True` se o utilizador estiver autenticado."""
+    if st.session_state.get("logged_in"):
+        return True
 
+    try:
+        users_db = st.secrets["users"]
+    except (KeyError, FileNotFoundError):
+        st.error("Ficheiro de segredos (secrets.toml) não configurado.")
+        st.info("Por favor, configure os acessos para continuar. Contacte o administrador.")
+        return False
+
+    st.title("Studio Data - Dashboard de Feiras")
+    username = st.text_input("Email")
+    password = st.text_input("Palavra-passe", type="password")
+
+    if st.button("Entrar"):
+        if username in users_db and password == users_db[username]:
+            st.session_state["logged_in"] = True
+            st.session_state["username"] = username
+            st.rerun()
+        else:
+            st.error("😕 Email ou palavra-passe incorreta.")
+    
+    return False
+
+
+# --- EXECUÇÃO PRINCIPAL ---
+if check_login():
+    # Carrega os dados uma vez após o login e guarda-os na sessão
+    if 'df_base' not in st.session_state:
+        with st.spinner("A carregar e preparar os dados... Isto pode demorar um pouco na primeira vez."):
+            df_completo = carregar_e_limpar_dados()
+            df_geocoded = geocode_dataframe(df_completo.copy())
+            st.session_state.df_base = df_geocoded.dropna(subset=['Latitude', 'Longitude']).copy()
+    main_dashboard()
